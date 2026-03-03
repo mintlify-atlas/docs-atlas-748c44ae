@@ -1,0 +1,408 @@
+---
+title: Template refs
+description: Use Vue template refs to attach onboarding steps to dynamic elements
+---
+
+Vue template refs provide a powerful way to reference DOM elements directly in your component. This is especially useful when elements are dynamically rendered or need reactive updates.
+
+## Basic ref usage
+
+Attach a step to an element using a template ref:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper ref="wrapper" :steps="steps" />
+    
+    <div ref="welcomeSection" class="hero">
+      <h1>Welcome</h1>
+      <p>Get started with our platform</p>
+    </div>
+    
+    <button @click="startTour">Start Tour</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const welcomeSection = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      element: welcomeSection // Pass the ref directly
+    },
+    content: {
+      title: 'Welcome Section',
+      description: 'This is where your journey begins!'
+    }
+  }
+]
+
+function startTour() {
+  start()
+}
+</script>
+```
+
+<Info>
+The `AttachableElement` type accepts: `string | (() => Element | null) | Ref<Element | null | undefined>`
+</Info>
+
+## Multiple refs
+
+Create a tour with multiple template refs:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <header ref="headerRef">
+      <nav ref="navRef">
+        <a href="#">Home</a>
+        <a href="#">Features</a>
+      </nav>
+    </header>
+    
+    <main ref="contentRef">
+      <section ref="dashboardRef">
+        <h2>Dashboard</h2>
+      </section>
+    </main>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const headerRef = ref(null)
+const navRef = ref(null)
+const contentRef = ref(null)
+const dashboardRef = ref(null)
+
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: headerRef },
+    content: {
+      title: 'Header',
+      description: 'Your main navigation area'
+    }
+  },
+  {
+    attachTo: { element: navRef },
+    content: {
+      title: 'Navigation',
+      description: 'Quick links to different sections'
+    }
+  },
+  {
+    attachTo: { element: contentRef },
+    content: {
+      title: 'Main Content',
+      description: 'Your workspace lives here'
+    }
+  },
+  {
+    attachTo: { element: dashboardRef },
+    content: {
+      title: 'Dashboard',
+      description: 'View your analytics and reports'
+    }
+  }
+]
+</script>
+```
+
+## Conditional rendering
+
+When working with `v-if` or `v-show`, use computed steps or function selectors:
+
+<Tabs>
+  <Tab title="Computed Steps">
+    ```vue
+    <template>
+      <div>
+        <VOnboardingWrapper :steps="steps" ref="wrapper" />
+        
+        <div ref="featurePanel" v-if="showFeatures">
+          <h2>Premium Features</h2>
+        </div>
+        
+        <button @click="showFeatures = true">Show Features</button>
+      </div>
+    </template>
+
+    <script setup lang="ts">
+    import { ref, computed } from 'vue'
+    import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+    import type { StepEntity } from 'v-onboarding'
+
+    const wrapper = ref(null)
+    const featurePanel = ref(null)
+    const showFeatures = ref(false)
+
+    const { start } = useVOnboarding(wrapper)
+
+    // Use computed to create steps reactively
+    const steps = computed<StepEntity[]>(() => [
+      {
+        attachTo: { element: featurePanel },
+        content: {
+          title: 'Premium Features',
+          description: 'Unlock advanced capabilities'
+        }
+      }
+    ])
+    </script>
+    ```
+  </Tab>
+  
+  <Tab title="Function Selector">
+    ```vue
+    <template>
+      <div>
+        <VOnboardingWrapper :steps="steps" ref="wrapper" />
+        
+        <div id="dynamic-feature" v-if="showFeatures">
+          <h2>Dynamic Content</h2>
+        </div>
+      </div>
+    </template>
+
+    <script setup lang="ts">
+    import { ref } from 'vue'
+    import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+    import type { StepEntity } from 'v-onboarding'
+
+    const wrapper = ref(null)
+    const showFeatures = ref(false)
+
+    const { start } = useVOnboarding(wrapper)
+
+    const steps: StepEntity[] = [
+      {
+        attachTo: {
+          // Function that returns the element when it exists
+          element: () => document.querySelector('#dynamic-feature')
+        },
+        content: {
+          title: 'Dynamic Content',
+          description: 'This element is conditionally rendered'
+        }
+      }
+    ]
+    </script>
+    ```
+  </Tab>
+</Tabs>
+
+## Lists and v-for
+
+Target specific items in a list:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <ul>
+      <li
+        v-for="(item, index) in items"
+        :key="item.id"
+        :ref="el => setItemRef(el, index)"
+      >
+        {{ item.name }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const itemRefs = ref<(Element | null)[]>([])
+
+const items = [
+  { id: 1, name: 'First Item' },
+  { id: 2, name: 'Second Item' },
+  { id: 3, name: 'Third Item' }
+]
+
+function setItemRef(el: Element | null, index: number) {
+  if (el) {
+    itemRefs.value[index] = el
+  }
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      // Target the first item
+      element: () => itemRefs.value[0]
+    },
+    content: {
+      title: 'First Item',
+      description: 'This is the first item in the list'
+    }
+  },
+  {
+    attachTo: {
+      // Target the third item
+      element: () => itemRefs.value[2]
+    },
+    content: {
+      title: 'Third Item',
+      description: 'Jump to any item in the list'
+    }
+  }
+]
+
+const { start } = useVOnboarding(wrapper)
+</script>
+```
+
+## Component refs
+
+Reference elements inside child components:
+
+<CodeGroup>
+```vue ParentComponent.vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    <FeatureCard ref="cardRef" />
+    <button @click="startTour">Start Tour</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import FeatureCard from './FeatureCard.vue'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const cardRef = ref(null)
+
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      // Access the exposed element from child component
+      element: () => cardRef.value?.getCardElement()
+    },
+    content: {
+      title: 'Feature Card',
+      description: 'This is a custom component'
+    }
+  }
+]
+
+function startTour() {
+  start()
+}
+</script>
+```
+
+```vue FeatureCard.vue
+<template>
+  <div ref="cardElement" class="feature-card">
+    <h3>Premium Feature</h3>
+    <p>Description here</p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const cardElement = ref<HTMLElement | null>(null)
+
+// Expose the element so parent can access it
+defineExpose({
+  getCardElement: () => cardElement.value
+})
+</script>
+```
+</CodeGroup>
+
+<Tip>
+Use `defineExpose()` to make internal elements accessible to parent components.
+</Tip>
+
+## Dynamic ref switching
+
+Switch between different refs based on state:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <div ref="desktopMenu" v-if="!isMobile" class="desktop-nav">
+      <nav>Desktop Navigation</nav>
+    </div>
+    
+    <div ref="mobileMenu" v-if="isMobile" class="mobile-nav">
+      <nav>Mobile Navigation</nav>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const desktopMenu = ref(null)
+const mobileMenu = ref(null)
+const isMobile = ref(window.innerWidth < 768)
+
+const { start } = useVOnboarding(wrapper)
+
+// Computed steps that adapt to viewport
+const steps = computed<StepEntity[]>(() => [
+  {
+    attachTo: {
+      element: isMobile.value ? mobileMenu : desktopMenu
+    },
+    content: {
+      title: 'Navigation Menu',
+      description: 'Access all features from here'
+    }
+  }
+])
+</script>
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Lifecycle hooks" href="/examples/lifecycle-hooks" icon="bolt">
+    Add async operations between steps
+  </Card>
+  <Card title="Custom styling" href="/examples/custom-styling" icon="palette">
+    Customize the tour appearance
+  </Card>
+  <Card title="API reference" href="/api/step-entity" icon="book">
+    Complete StepEntity API documentation
+  </Card>
+  <Card title="Configuration" href="/api/options" icon="gear">
+    Explore wrapper options
+  </Card>
+</CardGroup>

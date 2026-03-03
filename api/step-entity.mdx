@@ -1,0 +1,234 @@
+---
+title: Step entity
+description: Configuration object for individual onboarding steps
+---
+
+The `StepEntity` interface defines the structure of each step in your onboarding tour. Each step controls what content is displayed, where it's positioned, and what happens during the step lifecycle.
+
+## Interface definition
+
+```typescript
+interface StepEntity {
+  content: {
+    title: string;
+    description?: string;
+    html?: boolean
+  }
+  on?: {
+    beforeStep?: (options?: onBeforeStepOptions) => void | Promise<void>
+    afterStep?: (options?: onAfterStepOptions) => void | Promise<void>
+  },
+  attachTo: {
+    element: AttachableElement,
+    classList?: string[]
+  }
+  options?: VOnboardingWrapperOptions
+}
+```
+
+## Properties
+
+<ParamField path="content" type="object" required>
+  The content to display in the step tooltip.
+  
+  <Expandable title="content properties">
+    <ParamField path="content.title" type="string" required>
+      The title of the step, displayed prominently in the tooltip header.
+    </ParamField>
+    
+    <ParamField path="content.description" type="string">
+      Optional description text that provides additional context for the step.
+    </ParamField>
+    
+    <ParamField path="content.html" type="boolean" default={false}>
+      When `true`, the description will be rendered as HTML using `v-html`. Use with caution and only with trusted content.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="attachTo" type="object" required>
+  Specifies which element the step tooltip should be attached to.
+  
+  <Expandable title="attachTo properties">
+    <ParamField path="attachTo.element" type="AttachableElement" required>
+      The target element to attach the step to. Can be:
+      - A CSS selector string (e.g., `"#my-button"`)
+      - A function that returns an Element or null (e.g., `() => document.querySelector('.dynamic-element')`)
+      - A Vue ref containing an Element (e.g., `myElementRef`)
+    </ParamField>
+    
+    <ParamField path="attachTo.classList" type="string[]">
+      Optional array of CSS class names to add to the attached element during the step. Classes are automatically removed when the step ends.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="on" type="object">
+  Lifecycle hooks that execute before and after the step is displayed.
+  
+  <Expandable title="on properties">
+    <ParamField path="on.beforeStep" type="function">
+      Called before the step is displayed. Supports async functions. See [Hooks](/api/hooks) for details.
+      
+      ```typescript
+      (options?: onBeforeStepOptions) => void | Promise<void>
+      ```
+    </ParamField>
+    
+    <ParamField path="on.afterStep" type="function">
+      Called after the step is completed or when moving away from the step. Supports async functions. See [Hooks](/api/hooks) for details.
+      
+      ```typescript
+      (options?: onAfterStepOptions) => void | Promise<void>
+      ```
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="options" type="VOnboardingWrapperOptions">
+  Step-specific configuration that overrides global options for this step only. See [Options](/api/options) for all available settings.
+</ParamField>
+
+## Examples
+
+### Basic step
+
+```typescript
+const step: StepEntity = {
+  attachTo: {
+    element: '#welcome-button'
+  },
+  content: {
+    title: 'Welcome',
+    description: 'Click this button to get started with the app.'
+  }
+}
+```
+
+### Step with HTML content
+
+```typescript
+const step: StepEntity = {
+  attachTo: {
+    element: '.search-input'
+  },
+  content: {
+    title: 'Search Feature',
+    description: '<strong>Pro tip:</strong> Use <code>Cmd+K</code> to quickly open search.',
+    html: true
+  }
+}
+```
+
+### Step with dynamic element and CSS classes
+
+```typescript
+const step: StepEntity = {
+  attachTo: {
+    element: () => document.querySelector('.user-menu'),
+    classList: ['highlight-pulse', 'elevation-2']
+  },
+  content: {
+    title: 'User Menu',
+    description: 'Access your profile and settings here.'
+  }
+}
+```
+
+### Step with lifecycle hooks
+
+```typescript
+const step: StepEntity = {
+  attachTo: {
+    element: '#settings-panel'
+  },
+  content: {
+    title: 'Settings Panel',
+    description: 'Configure your preferences here.'
+  },
+  on: {
+    beforeStep: async ({ index, isForward }) => {
+      console.log(`Entering step ${index}`);
+      // Wait for panel to open
+      await openSettingsPanel();
+    },
+    afterStep: async ({ index, isBackward }) => {
+      if (isBackward) {
+        // Close panel if going backward
+        await closeSettingsPanel();
+      }
+    }
+  }
+}
+```
+
+### Step with custom options
+
+```typescript
+const step: StepEntity = {
+  attachTo: {
+    element: '#notifications'
+  },
+  content: {
+    title: 'Notifications',
+    description: 'Stay updated with real-time alerts.'
+  },
+  options: {
+    overlay: {
+      enabled: true,
+      padding: 8,
+      borderRadius: 8
+    },
+    hideButtons: {
+      previous: true  // Hide previous button on this step
+    }
+  }
+}
+```
+
+### Using Vue refs
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { VOnboardingWrapper } from 'v-onboarding';
+
+const submitButton = ref(null);
+
+const steps = [
+  {
+    attachTo: {
+      element: submitButton
+    },
+    content: {
+      title: 'Submit',
+      description: 'Click here to submit your form.'
+    }
+  }
+];
+</script>
+
+<template>
+  <button ref="submitButton">Submit</button>
+  <VOnboardingWrapper :steps="steps" />
+</template>
+```
+
+## Type definitions
+
+### AttachableElement
+
+The `element` property accepts three types:
+
+```typescript
+type AttachableElement = 
+  | string                                    // CSS selector
+  | (() => Element | null)                   // Function returning element
+  | Ref<Element | null | undefined>          // Vue ref
+```
+
+## Related
+
+- [Options](/api/options) - Configure step behavior and appearance
+- [Hooks](/api/hooks) - Learn about lifecycle hooks
+- [CSS Variables](/api/css-variables) - Customize step styling

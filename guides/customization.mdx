@@ -1,0 +1,527 @@
+---
+title: Customization
+description: Customize overlay, positioning, scrolling, and visual appearance
+---
+
+Control every aspect of the tour experience through options and CSS variables.
+
+## Options structure
+
+Pass options to the wrapper component or individual steps:
+
+```typescript
+interface VOnboardingWrapperOptions {
+  popper?: PopperOptions;           // Positioning configuration
+  overlay?: SvgOverlayOptions;      // Overlay appearance and behavior
+  scrollToStep?: ScrollOptions;     // Auto-scroll configuration
+  autoFinishByExit?: boolean;       // Auto-finish when exit is clicked
+  hideButtons?: {                   // Hide navigation buttons
+    previous?: boolean;
+    next?: boolean;
+    exit?: boolean;
+  };
+  labels?: {                        // Customize button text
+    previousButton?: string;
+    nextButton?: string;
+    finishButton?: string;
+  };
+  hideNextStepDuringHook?: boolean; // Hide UI during async hooks
+}
+```
+
+## Overlay options
+
+Customize the dark overlay that highlights target elements:
+
+```typescript
+interface SvgOverlayOptions {
+  enabled?: boolean;
+  padding?: number | {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+  borderRadius?: number | {
+    leftTop?: number;
+    rightTop?: number;
+    rightBottom?: number;
+    leftBottom?: number;
+  };
+  preventOverlayInteraction?: boolean;
+}
+```
+
+### Basic overlay configuration
+
+<CodeGroup>
+```typescript Global options
+// Apply to all steps
+const options = {
+  overlay: {
+    enabled: true,
+    padding: 8,
+    borderRadius: 4,
+    preventOverlayInteraction: true
+  }
+}
+```
+
+```typescript Per-step options
+// Override for specific steps
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    content: { title: 'Large padding' },
+    options: {
+      overlay: {
+        padding: 16,
+        borderRadius: 8
+      }
+    }
+  }
+]
+```
+</CodeGroup>
+
+### Asymmetric padding
+
+Set different padding for each side:
+
+```typescript
+const options = {
+  overlay: {
+    padding: {
+      top: 8,
+      right: 16,
+      bottom: 8,
+      left: 16
+    }
+  }
+}
+```
+
+### Custom border radius
+
+Control each corner independently:
+
+```typescript
+const options = {
+  overlay: {
+    borderRadius: {
+      leftTop: 8,
+      rightTop: 8,
+      rightBottom: 4,
+      leftBottom: 4
+    }
+  }
+}
+```
+
+### Prevent overlay interaction
+
+When enabled, users can only interact with the highlighted element:
+
+```typescript
+const options = {
+  overlay: {
+    preventOverlayInteraction: true  // Default: true
+  }
+}
+```
+
+<Info>
+When `preventOverlayInteraction` is `true`, the library sets `pointer-events: none` on `document.body` and `pointer-events: auto` on the highlighted element (VOnboardingWrapper.vue:83-86).
+</Info>
+
+### Disable overlay
+
+Turn off the overlay for specific steps:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    content: { title: 'No overlay' },
+    options: {
+      overlay: {
+        enabled: false
+      }
+    }
+  }
+]
+```
+
+## Popper.js positioning
+
+Control tooltip placement using Popper.js options:
+
+```typescript
+const options = {
+  popper: {
+    placement: 'bottom',  // 'top' | 'bottom' | 'left' | 'right' | 'auto'
+    modifiers: [
+      {
+        name: 'offset',
+        options: {
+          offset: [0, 12]  // [skidding, distance]
+        }
+      },
+      {
+        name: 'flip',
+        options: {
+          fallbackPlacements: ['top', 'right', 'left']
+        }
+      }
+    ]
+  }
+}
+```
+
+### Default Popper configuration
+
+The library includes these defaults (VOnboardingWrapper.ts:4-27):
+
+```typescript
+const defaultOptions = {
+  popper: {
+    modifiers: [
+      {
+        name: 'arrow',
+        options: {
+          padding: 8
+        }
+      },
+      {
+        name: 'flip',
+        options: {
+          fallbackPlacements: ['top', 'bottom', 'right', 'left']
+        }
+      },
+      {
+        name: 'preventOverflow',
+        options: {
+          boundary: 'viewport',
+          padding: 8,
+          tether: false,
+          altAxis: true
+        }
+      }
+    ]
+  }
+}
+```
+
+### Common placement options
+
+<Tabs>
+  <Tab title="Bottom (default)">
+    ```typescript
+    const options = {
+      popper: { placement: 'bottom' }
+    }
+    ```
+  </Tab>
+  <Tab title="Top">
+    ```typescript
+    const options = {
+      popper: { placement: 'top' }
+    }
+    ```
+  </Tab>
+  <Tab title="Left/Right">
+    ```typescript
+    const options = {
+      popper: { placement: 'right' }
+    }
+    ```
+  </Tab>
+  <Tab title="Auto (best fit)">
+    ```typescript
+    const options = {
+      popper: { placement: 'auto' }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Offset configuration
+
+Control tooltip distance from the target:
+
+```typescript
+const options = {
+  popper: {
+    modifiers: [
+      {
+        name: 'offset',
+        options: {
+          offset: [0, 16]  // 16px distance from element
+        }
+      }
+    ]
+  }
+}
+```
+
+## Scroll to step
+
+Automatically scroll elements into view:
+
+```typescript
+interface ScrollToStepOptions {
+  enabled?: boolean;
+  options?: ScrollIntoViewOptions;
+}
+```
+
+### Default scroll configuration
+
+```typescript
+const defaultOptions = {
+  scrollToStep: {
+    enabled: true,
+    options: {
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center'
+    }
+  }
+}
+```
+
+### Scroll behavior options
+
+<CodeGroup>
+```typescript Smooth scroll
+const options = {
+  scrollToStep: {
+    enabled: true,
+    options: {
+      behavior: 'smooth',
+      block: 'center'
+    }
+  }
+}
+```
+
+```typescript Instant scroll
+const options = {
+  scrollToStep: {
+    enabled: true,
+    options: {
+      behavior: 'instant',
+      block: 'start'
+    }
+  }
+}
+```
+
+```typescript Disable scroll
+const options = {
+  scrollToStep: {
+    enabled: false
+  }
+}
+```
+</CodeGroup>
+
+### Block alignment
+
+Control vertical alignment:
+
+- `'start'` - Align to top of viewport
+- `'center'` - Center in viewport (default)
+- `'end'` - Align to bottom
+- `'nearest'` - Minimal scroll
+
+```typescript
+const options = {
+  scrollToStep: {
+    options: {
+      block: 'start'  // Scroll element to top
+    }
+  }
+}
+```
+
+<Note>
+When `behavior: 'smooth'` is used, the library waits for scrolling to complete before showing the tooltip (VOnboardingStep.vue:133-137).
+</Note>
+
+## Button configuration
+
+Customize navigation buttons:
+
+```typescript
+const options = {
+  // Hide specific buttons
+  hideButtons: {
+    previous: false,
+    next: false,
+    exit: false
+  },
+  // Customize button labels
+  labels: {
+    previousButton: 'Back',
+    nextButton: 'Continue',
+    finishButton: 'Get Started'
+  }
+}
+```
+
+### Hide buttons
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    content: { title: 'Read only' },
+    options: {
+      hideButtons: {
+        previous: true,
+        next: true,
+        exit: false  // Keep exit button
+      }
+    }
+  }
+]
+```
+
+### Custom labels
+
+```typescript
+const options = {
+  labels: {
+    previousButton: '← Previous',
+    nextButton: 'Next →',
+    finishButton: '✓ Done'
+  }
+}
+```
+
+## CSS variables
+
+Override visual styling with CSS custom properties:
+
+```css
+:root {
+  /* Overlay */
+  --v-onboarding-overlay-fill: black;
+  --v-onboarding-overlay-opacity: 0.5;
+  --v-onboarding-overlay-z: 10;
+
+  /* Step tooltip */
+  --v-onboarding-step-arrow-background: white;
+  --v-onboarding-step-arrow-size: 10px;
+  --v-onboarding-step-z: 20;
+}
+```
+
+### Overlay theming
+
+<Tabs>
+  <Tab title="Dark overlay">
+    ```css
+    :root {
+      --v-onboarding-overlay-fill: black;
+      --v-onboarding-overlay-opacity: 0.7;
+    }
+    ```
+  </Tab>
+  <Tab title="Light overlay">
+    ```css
+    :root {
+      --v-onboarding-overlay-fill: white;
+      --v-onboarding-overlay-opacity: 0.3;
+    }
+    ```
+  </Tab>
+  <Tab title="Colored overlay">
+    ```css
+    :root {
+      --v-onboarding-overlay-fill: #6366f1;
+      --v-onboarding-overlay-opacity: 0.15;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Arrow customization
+
+```css
+:root {
+  --v-onboarding-step-arrow-background: #1f2937;
+  --v-onboarding-step-arrow-size: 12px;
+}
+
+/* Advanced arrow styling */
+[data-popper-arrow]::before {
+  background: var(--v-onboarding-step-arrow-background) !important;
+  border: 1px solid #e5e7eb !important;
+}
+```
+
+## Auto-finish behavior
+
+Control whether clicking exit automatically finishes the tour:
+
+```typescript
+const options = {
+  autoFinishByExit: true  // Default: true
+}
+```
+
+<Info>
+When `autoFinishByExit` is `true`, clicking the exit button calls both `exit()` and `finish()` (VOnboardingStep.vue:150-153).
+</Info>
+
+## Hide step during hooks
+
+Prevent UI flicker during async lifecycle hooks:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    content: { title: 'Loading...' },
+    options: {
+      hideNextStepDuringHook: true
+    },
+    on: {
+      beforeStep: async () => {
+        await loadData()  // UI hidden during this
+      }
+    }
+  }
+]
+```
+
+## Merging options
+
+Options are merged in this order (highest priority last):
+
+1. Default options (VOnboardingWrapper.ts)
+2. Global wrapper options
+3. Individual step options
+
+```typescript
+// Global options
+const globalOptions = {
+  overlay: { padding: 8 }
+}
+
+// Step options override
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    options: {
+      overlay: { padding: 16 }  // This wins
+    }
+  }
+]
+```
+
+<Tip>
+Use global options for consistent behavior and step options for special cases.
+</Tip>

@@ -1,0 +1,389 @@
+---
+title: Custom UI
+description: Build completely custom step interfaces using the default slot
+---
+
+Replace the default step UI with your own design using the powerful slot system.
+
+## Default slot pattern
+
+The `VOnboardingWrapper` component provides a default slot that exposes all the data and functions you need to build custom UI:
+
+```vue
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast, index }">
+      <!-- Your custom UI here -->
+    </template>
+  </VOnboardingWrapper>
+</template>
+```
+
+## Slot props
+
+The default slot provides these props:
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `step` | `StepEntity` | Current step configuration object |
+| `next` | `() => void` | Navigate to next step (or finish if last) |
+| `previous` | `() => void` | Navigate to previous step |
+| `exit` | `() => void` | Exit the tour (emits exit event) |
+| `isFirst` | `boolean` | Whether this is the first step |
+| `isLast` | `boolean` | Whether this is the last step |
+| `index` | `number` | Current step index (0-based) |
+
+<Info>
+These slot props come from VOnboardingWrapper.vue:3-6 in the source code.
+</Info>
+
+## Using VOnboardingStep
+
+Wrap your custom content with `VOnboardingStep` to maintain proper positioning, overlay functionality, and Popper.js integration:
+
+```vue
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast }">
+      <VOnboardingStep>
+        <div class="my-custom-tooltip">
+          <h3>{{ step.content?.title }}</h3>
+          <p>{{ step.content?.description }}</p>
+          <button @click="next">
+            {{ isLast ? 'Finish' : 'Next' }}
+          </button>
+        </div>
+      </VOnboardingStep>
+    </template>
+  </VOnboardingWrapper>
+</template>
+
+<script setup>
+import { VOnboardingWrapper, VOnboardingStep } from 'v-onboarding'
+</script>
+```
+
+<Warning>
+Always wrap custom content with `VOnboardingStep`. Without it, the tooltip won't position correctly and the overlay won't highlight the target element.
+</Warning>
+
+## Accessing step data
+
+The `step` prop provides access to all step configuration:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps">
+    <template #default="{ step, index }">
+      <VOnboardingStep>
+        <div class="tooltip">
+          <!-- Access content -->
+          <h3>{{ step.content.title }}</h3>
+          <p>{{ step.content.description }}</p>
+          
+          <!-- Access custom step data -->
+          <img v-if="step.image" :src="step.image" />
+          
+          <!-- Show progress -->
+          <span>Step {{ index + 1 }} of {{ steps.length }}</span>
+        </div>
+      </VOnboardingStep>
+    </template>
+  </VOnboardingWrapper>
+</template>
+```
+
+## Navigation functions
+
+Use the exposed navigation functions to control tour flow:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps">
+    <template #default="{ next, previous, exit, isFirst, isLast }">
+      <VOnboardingStep>
+        <div class="tooltip-actions">
+          <!-- Conditional previous button -->
+          <button v-if="!isFirst" @click="previous">
+            Back
+          </button>
+          
+          <!-- Dynamic next/finish button -->
+          <button @click="next">
+            {{ isLast ? 'Done' : 'Continue' }}
+          </button>
+          
+          <!-- Exit button -->
+          <button @click="exit" class="close-btn">
+            ×
+          </button>
+        </div>
+      </VOnboardingStep>
+    </template>
+  </VOnboardingWrapper>
+</template>
+```
+
+<Note>
+The `next` function automatically calls `finish()` when on the last step, as seen in VOnboardingWrapper.vue:152-158.
+</Note>
+
+## Complete custom example
+
+Here's a fully-styled custom tooltip with progress indicators:
+
+```vue
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast, index }">
+      <VOnboardingStep>
+        <div class="custom-tooltip">
+          <!-- Header -->
+          <div class="tooltip-header">
+            <span class="step-badge">Step {{ index + 1 }}</span>
+            <button @click="exit" class="close-btn" aria-label="Close">
+              ×
+            </button>
+          </div>
+
+          <!-- Content -->
+          <h3 class="tooltip-title">{{ step.content?.title }}</h3>
+          <p class="tooltip-description">{{ step.content?.description }}</p>
+
+          <!-- Progress dots -->
+          <div class="progress-dots">
+            <span
+              v-for="(_, i) in steps"
+              :key="i"
+              :class="['dot', { active: i === index }]"
+            />
+          </div>
+
+          <!-- Actions -->
+          <div class="tooltip-actions">
+            <button v-if="!isFirst" @click="previous" class="btn-secondary">
+              Back
+            </button>
+            <button @click="next" class="btn-primary">
+              {{ isLast ? 'Done' : 'Continue' }}
+            </button>
+          </div>
+        </div>
+      </VOnboardingStep>
+    </template>
+  </VOnboardingWrapper>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, VOnboardingStep, useVOnboarding } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps = [
+  {
+    attachTo: { element: '#welcome' },
+    content: {
+      title: 'Welcome!',
+      description: 'Let\'s take a quick tour of the app.'
+    }
+  },
+  {
+    attachTo: { element: '#features' },
+    content: {
+      title: 'Key Features',
+      description: 'Check out what you can do here.'
+    }
+  },
+  {
+    attachTo: { element: '#settings' },
+    content: {
+      title: 'Settings',
+      description: 'Customize your experience.'
+    }
+  }
+]
+</script>
+
+<style scoped>
+.custom-tooltip {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.step-badge {
+  background: #6366f1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.tooltip-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #111;
+}
+
+.tooltip-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.progress-dots {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  transition: background 0.2s;
+}
+
+.dot.active {
+  background: #6366f1;
+}
+
+.tooltip-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 10px 20px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #4f46e5;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: #999;
+  background: #f9f9f9;
+}
+</style>
+```
+
+## Conditional custom UI
+
+Show custom UI for specific steps only:
+
+```vue
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast, index }">
+      <!-- Special UI for step 3 -->
+      <VOnboardingStep v-if="index === 2">
+        <MySpecialTooltip
+          :title="step.content?.title"
+          :description="step.content?.description"
+          @next="next"
+          @close="exit"
+        />
+      </VOnboardingStep>
+
+      <!-- Default UI for other steps -->
+      <VOnboardingStep v-else />
+    </template>
+  </VOnboardingWrapper>
+</template>
+```
+
+<Tip>
+Using `<VOnboardingStep />` without children renders the default tooltip UI.
+</Tip>
+
+## Customizing the arrow
+
+The arrow is rendered as `[data-popper-arrow]` and can be styled or hidden:
+
+<Tabs>
+  <Tab title="Hide arrow">
+    ```css
+    /* Hide the arrow completely */
+    .custom-tooltip ~ [data-popper-arrow] {
+      display: none;
+    }
+    ```
+  </Tab>
+  <Tab title="Style arrow">
+    ```css
+    /* Match arrow to custom tooltip */
+    [data-popper-arrow]::before {
+      background: white !important;
+      border: 1px solid #e5e7eb !important;
+    }
+    ```
+  </Tab>
+  <Tab title="CSS variable">
+    ```css
+    /* Use CSS variable */
+    :root {
+      --v-onboarding-step-arrow-background: #1f2937;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Default slot fallback
+
+If you don't provide slot content, `VOnboardingStep` is used as the default (VOnboardingWrapper.vue:5):
+
+```vue
+<VOnboardingWrapper :steps="steps">
+  <!-- Uses default VOnboardingStep component -->
+</VOnboardingWrapper>
+```
+
+This renders the built-in tooltip with default styling.

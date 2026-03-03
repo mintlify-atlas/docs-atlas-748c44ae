@@ -1,0 +1,522 @@
+---
+title: Lifecycle hooks
+description: Use beforeStep and afterStep hooks to add async operations, analytics, and state management
+---
+
+Lifecycle hooks allow you to execute code before and after each step in your tour. This is perfect for loading data, tracking analytics, triggering animations, or updating application state.
+
+## Hook signatures
+
+Both hooks receive the same options object with metadata about the step transition:
+
+```ts
+interface onBeforeStepOptions {
+  index: number          // Current step index (0-based)
+  step: StepEntity       // The step being entered
+  direction: 1 | -1      // 1 for forward, -1 for backward
+  isForward: boolean     // true when moving to next step
+  isBackward: boolean    // true when moving to previous step
+}
+
+interface onAfterStepOptions {
+  index: number
+  step: StepEntity
+  direction: 1 | -1
+  isForward: boolean
+  isBackward: boolean
+}
+```
+
+## Basic hook usage
+
+```ts
+import type { StepEntity, onBeforeStepOptions, onAfterStepOptions } from 'v-onboarding'
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#dashboard' },
+    content: {
+      title: 'Dashboard',
+      description: 'Your analytics overview'
+    },
+    on: {
+      beforeStep: (options) => {
+        console.log('Entering step', options.index)
+        console.log('Moving forward?', options.isForward)
+      },
+      afterStep: (options) => {
+        console.log('Leaving step', options.index)
+        console.log('Moving backward?', options.isBackward)
+      }
+    }
+  }
+]
+```
+
+## Async operations
+
+Hooks support async/await for data loading and API calls:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <div id="user-profile">
+      <h2>{{ userData?.name }}</h2>
+      <p>{{ userData?.email }}</p>
+    </div>
+    
+    <div id="settings-panel">
+      <h3>Settings</h3>
+      <p>{{ settingsData?.theme }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const userData = ref(null)
+const settingsData = ref(null)
+
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#user-profile' },
+    content: {
+      title: 'User Profile',
+      description: 'View and edit your profile information'
+    },
+    on: {
+      // Load user data before showing this step
+      beforeStep: async () => {
+        const response = await fetch('/api/user')
+        userData.value = await response.json()
+      }
+    }
+  },
+  {
+    attachTo: { element: '#settings-panel' },
+    content: {
+      title: 'Settings',
+      description: 'Customize your experience'
+    },
+    on: {
+      beforeStep: async () => {
+        const response = await fetch('/api/settings')
+        settingsData.value = await response.json()
+      }
+    }
+  }
+]
+</script>
+```
+
+<Info>
+The tour waits for async hooks to complete before showing the next step. Use the `hideNextStepDuringHook` option to hide the tooltip while loading.
+</Info>
+
+## Analytics tracking
+
+Track user progress through your tour:
+
+```ts
+import type { StepEntity } from 'v-onboarding'
+
+// Analytics service
+const analytics = {
+  track: (event: string, properties: any) => {
+    console.log('Analytics:', event, properties)
+    // Send to your analytics service
+  }
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#feature-1' },
+    content: {
+      title: 'Feature 1',
+      description: 'Our first feature'
+    },
+    on: {
+      beforeStep: ({ index, isForward }) => {
+        analytics.track('Tour Step Viewed', {
+          step_index: index,
+          step_name: 'Feature 1',
+          direction: isForward ? 'forward' : 'backward'
+        })
+      },
+      afterStep: ({ index }) => {
+        analytics.track('Tour Step Completed', {
+          step_index: index,
+          step_name: 'Feature 1'
+        })
+      }
+    }
+  },
+  {
+    attachTo: { element: '#feature-2' },
+    content: {
+      title: 'Feature 2',
+      description: 'Another great feature'
+    },
+    on: {
+      beforeStep: ({ index, isForward }) => {
+        analytics.track('Tour Step Viewed', {
+          step_index: index,
+          step_name: 'Feature 2',
+          direction: isForward ? 'forward' : 'backward'
+        })
+      }
+    }
+  }
+]
+```
+
+## State management
+
+Update application state during the tour:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <div id="editor" :class="{ 'demo-mode': isDemoMode }">
+      <textarea v-model="content">{{ content }}</textarea>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const isDemoMode = ref(false)
+const content = ref('')
+const originalContent = ref('')
+
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#editor' },
+    content: {
+      title: 'Text Editor',
+      description: 'Try editing this sample content'
+    },
+    on: {
+      beforeStep: () => {
+        // Enable demo mode and load sample content
+        isDemoMode.value = true
+        originalContent.value = content.value
+        content.value = 'This is sample content for the demo!'
+      },
+      afterStep: () => {
+        // Restore original content when leaving
+        content.value = originalContent.value
+        isDemoMode.value = false
+      }
+    }
+  }
+]
+</script>
+```
+
+## Animations
+
+Trigger animations when steps become active:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" />
+    
+    <div id="feature-panel" :class="{ 'animated': isAnimating }">
+      <h2>Feature Panel</h2>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const isAnimating = ref(false)
+
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#feature-panel' },
+    content: {
+      title: 'Feature Panel',
+      description: 'Watch this panel animate!'
+    },
+    on: {
+      beforeStep: async () => {
+        // Start animation
+        isAnimating.value = true
+        
+        // Wait for animation to complete
+        await new Promise(resolve => setTimeout(resolve, 500))
+      },
+      afterStep: () => {
+        // Remove animation class
+        isAnimating.value = false
+      }
+    }
+  }
+]
+</script>
+
+<style scoped>
+.animated {
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+</style>
+```
+
+## Direction-based logic
+
+Execute different logic based on navigation direction:
+
+```ts
+import type { StepEntity } from 'v-onboarding'
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#multi-step-form' },
+    content: {
+      title: 'Form Step 2',
+      description: 'Fill out your details'
+    },
+    on: {
+      beforeStep: ({ isForward, isBackward }) => {
+        if (isForward) {
+          // Validate previous step before proceeding
+          console.log('Validating previous form data...')
+        } else if (isBackward) {
+          // Restore saved data when going back
+          console.log('Restoring previous form state...')
+        }
+      },
+      afterStep: ({ isForward }) => {
+        if (isForward) {
+          // Save form data when moving forward
+          console.log('Saving form progress...')
+        }
+      }
+    }
+  }
+]
+```
+
+## Error handling
+
+Handle errors gracefully in async hooks:
+
+```ts
+import type { StepEntity } from 'v-onboarding'
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#data-section' },
+    content: {
+      title: 'Data Section',
+      description: 'Loading your data...'
+    },
+    on: {
+      beforeStep: async () => {
+        try {
+          const response = await fetch('/api/data')
+          
+          if (!response.ok) {
+            throw new Error('Failed to load data')
+          }
+          
+          const data = await response.json()
+          console.log('Data loaded:', data)
+        } catch (error) {
+          console.error('Error loading data:', error)
+          
+          // Show error message to user
+          alert('Failed to load data. Please try again.')
+          
+          // Optionally exit the tour
+          // wrapper.value?.finish()
+        }
+      }
+    }
+  }
+]
+```
+
+## Loading states
+
+Show loading indicators during async operations:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper :steps="steps" ref="wrapper" :options="options" />
+    
+    <div id="content-panel">
+      <div v-if="isLoading" class="loading-spinner">Loading...</div>
+      <div v-else>{{ loadedContent }}</div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity, VOnboardingWrapperOptions } from 'v-onboarding'
+
+const wrapper = ref(null)
+const isLoading = ref(false)
+const loadedContent = ref('')
+
+const { start } = useVOnboarding(wrapper)
+
+// Hide the tooltip while loading
+const options: VOnboardingWrapperOptions = {
+  hideNextStepDuringHook: true
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#content-panel' },
+    content: {
+      title: 'Content Panel',
+      description: 'Your loaded content appears here'
+    },
+    on: {
+      beforeStep: async () => {
+        isLoading.value = true
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        loadedContent.value = 'Content loaded successfully!'
+        isLoading.value = false
+      }
+    }
+  }
+]
+</script>
+```
+
+<Tip>
+Set `hideNextStepDuringHook: true` in wrapper options to hide the tooltip while async hooks are executing.
+</Tip>
+
+## Complete example
+
+Here's a complete example combining multiple hook patterns:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#step-1' },
+    content: {
+      title: 'Step 1',
+      description: 'Introduction'
+    },
+    on: {
+      beforeStep: ({ index, isForward }) => {
+        // Track analytics
+        window.analytics?.track('tour_step_viewed', { step: index })
+        
+        // Add CSS class for styling
+        document.body.classList.add('tour-active')
+      },
+      afterStep: () => {
+        console.log('User completed step 1')
+      }
+    }
+  },
+  {
+    attachTo: { element: '#step-2' },
+    content: {
+      title: 'Step 2',
+      description: 'Data loading'
+    },
+    on: {
+      beforeStep: async () => {
+        // Load required data
+        await fetch('/api/initialize')
+      },
+      afterStep: async ({ isForward }) => {
+        if (isForward) {
+          // Save progress
+          await fetch('/api/progress', {
+            method: 'POST',
+            body: JSON.stringify({ step: 2, completed: true })
+          })
+        }
+      }
+    }
+  },
+  {
+    attachTo: { element: '#step-3' },
+    content: {
+      title: 'Step 3',
+      description: 'Final step'
+    },
+    on: {
+      afterStep: () => {
+        // Cleanup when leaving last step
+        document.body.classList.remove('tour-active')
+        window.analytics?.track('tour_completed')
+      }
+    }
+  }
+]
+</script>
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Custom styling" href="/examples/custom-styling" icon="palette">
+    Customize the tour appearance with CSS
+  </Card>
+  <Card title="Configuration" href="/api/options" icon="gear">
+    Explore all wrapper options
+  </Card>
+  <Card title="StepEntity API" href="/api/step-entity" icon="book">
+    Complete step configuration reference
+  </Card>
+  <Card title="Composables" href="/api/use-v-onboarding" icon="code">
+    useVOnboarding API reference
+  </Card>
+</CardGroup>

@@ -1,0 +1,609 @@
+---
+title: Custom styling
+description: Customize the appearance of your onboarding tours with CSS variables and custom classes
+---
+
+v-onboarding provides extensive styling customization through CSS variables, custom classes, and overlay options.
+
+## CSS variables
+
+The library exposes CSS variables that you can override to match your brand:
+
+```css
+:root {
+  /* Overlay fill color and opacity */
+  --v-onboarding-overlay-fill: #000000;
+  --v-onboarding-overlay-opacity: 0.5;
+  
+  /* Step arrow/pointer background */
+  --v-onboarding-step-arrow-background: #ffffff;
+}
+```
+
+### Basic customization
+
+```css
+/* Light overlay on dark backgrounds */
+:root {
+  --v-onboarding-overlay-fill: #ffffff;
+  --v-onboarding-overlay-opacity: 0.15;
+  --v-onboarding-step-arrow-background: #1a1a1a;
+}
+
+/* Dark overlay on light backgrounds */
+:root {
+  --v-onboarding-overlay-fill: #000000;
+  --v-onboarding-overlay-opacity: 0.6;
+  --v-onboarding-step-arrow-background: #ffffff;
+}
+```
+
+## Styling the tooltip
+
+Target the tooltip components with CSS classes:
+
+```css
+/* Main tooltip container */
+.v-onboarding-item {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Tooltip header */
+.v-onboarding-item__header {
+  margin-bottom: 12px;
+}
+
+/* Title styling */
+.v-onboarding-item__header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+/* Close button */
+.v-onboarding-item__header-close {
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.v-onboarding-item__header-close:hover {
+  color: #111827;
+}
+
+/* Description text */
+.v-onboarding-item__description {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Actions/buttons container */
+.v-onboarding-item__actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Primary button */
+.v-onboarding-btn-primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.v-onboarding-btn-primary:hover {
+  background: #2563eb;
+}
+
+/* Secondary button */
+.v-onboarding-btn-secondary {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v-onboarding-btn-secondary:hover {
+  border-color: #9ca3af;
+  color: #111827;
+}
+```
+
+## Theme variations
+
+Create different themes by scoping CSS variables:
+
+<Tabs>
+  <Tab title="Dark Theme">
+    ```css
+    .dark-theme {
+      --v-onboarding-overlay-fill: #ffffff;
+      --v-onboarding-overlay-opacity: 0.1;
+      --v-onboarding-step-arrow-background: #1f2937;
+    }
+
+    .dark-theme .v-onboarding-item {
+      background: #1f2937;
+      border-color: #374151;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .dark-theme .v-onboarding-item__header-title {
+      color: #f9fafb;
+    }
+
+    .dark-theme .v-onboarding-item__description {
+      color: #d1d5db;
+    }
+
+    .dark-theme .v-onboarding-btn-primary {
+      background: #3b82f6;
+    }
+
+    .dark-theme .v-onboarding-btn-secondary {
+      border-color: #4b5563;
+      color: #d1d5db;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Accent Color">
+    ```css
+    .accent-theme {
+      --v-onboarding-overlay-fill: #7c3aed;
+      --v-onboarding-overlay-opacity: 0.15;
+      --v-onboarding-step-arrow-background: #ffffff;
+    }
+
+    .accent-theme .v-onboarding-item {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 1px #7c3aed,
+                  0 20px 25px -5px rgba(124, 58, 237, 0.3);
+    }
+
+    .accent-theme .v-onboarding-item__header-title {
+      color: #7c3aed;
+    }
+
+    .accent-theme .v-onboarding-btn-primary {
+      background: #7c3aed;
+    }
+
+    .accent-theme .v-onboarding-btn-primary:hover {
+      background: #6d28d9;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Minimal">
+    ```css
+    .minimal-theme {
+      --v-onboarding-overlay-fill: #000000;
+      --v-onboarding-overlay-opacity: 0.3;
+      --v-onboarding-step-arrow-background: #ffffff;
+    }
+
+    .minimal-theme .v-onboarding-item {
+      background: #ffffff;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      padding: 16px;
+      max-width: 320px;
+    }
+
+    .minimal-theme .v-onboarding-item__header-title {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .minimal-theme .v-onboarding-item__description {
+      font-size: 13px;
+    }
+
+    .minimal-theme .v-onboarding-btn-primary,
+    .minimal-theme .v-onboarding-btn-secondary {
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Overlay customization
+
+Configure overlay appearance through the options API:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps" :options="options" />
+</template>
+
+<script setup lang="ts">
+import type { StepEntity, VOnboardingWrapperOptions } from 'v-onboarding'
+
+const options: VOnboardingWrapperOptions = {
+  overlay: {
+    enabled: true,
+    // Add padding around highlighted element
+    padding: 8,
+    // Or use different padding for each side
+    // padding: {
+    //   top: 10,
+    //   right: 10,
+    //   bottom: 10,
+    //   left: 10
+    // },
+    
+    // Border radius for highlight area
+    borderRadius: 8,
+    // Or use different radius for each corner
+    // borderRadius: {
+    //   leftTop: 8,
+    //   rightTop: 8,
+    //   rightBottom: 8,
+    //   leftBottom: 8
+    // },
+    
+    // Prevent clicks on overlay
+    preventOverlayInteraction: true
+  }
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#feature' },
+    content: { title: 'Feature' }
+  }
+]
+</script>
+```
+
+### Per-step overlay options
+
+```ts
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#round-element' },
+    content: { title: 'Round Element' },
+    options: {
+      overlay: {
+        borderRadius: 50, // Circular highlight
+        padding: 12
+      }
+    }
+  },
+  {
+    attachTo: { element: '#square-element' },
+    content: { title: 'Square Element' },
+    options: {
+      overlay: {
+        borderRadius: 0, // Sharp corners
+        padding: 4
+      }
+    }
+  }
+]
+```
+
+## Dynamic theming
+
+Change themes during the tour using lifecycle hooks:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps" ref="wrapper" />
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const themes = ['theme-blue', 'theme-purple', 'theme-green']
+
+function setTheme(theme: string) {
+  themes.forEach(t => document.body.classList.remove(t))
+  document.body.classList.add(theme)
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#step-1' },
+    content: { title: 'Blue Theme' },
+    on: {
+      beforeStep: () => setTheme('theme-blue')
+    }
+  },
+  {
+    attachTo: { element: '#step-2' },
+    content: { title: 'Purple Theme' },
+    on: {
+      beforeStep: () => setTheme('theme-purple')
+    }
+  },
+  {
+    attachTo: { element: '#step-3' },
+    content: { title: 'Green Theme' },
+    on: {
+      beforeStep: () => setTheme('theme-green')
+    }
+  }
+]
+</script>
+
+<style>
+.theme-blue {
+  --v-onboarding-overlay-fill: #3b82f6;
+  --v-onboarding-overlay-opacity: 0.12;
+}
+
+.theme-purple {
+  --v-onboarding-overlay-fill: #a855f7;
+  --v-onboarding-overlay-opacity: 0.12;
+}
+
+.theme-green {
+  --v-onboarding-overlay-fill: #10b981;
+  --v-onboarding-overlay-opacity: 0.12;
+}
+</style>
+```
+
+## Dark mode support
+
+Adapt your tour styles for dark mode:
+
+```css
+/* Light mode defaults */
+:root {
+  --v-onboarding-overlay-fill: #000000;
+  --v-onboarding-overlay-opacity: 0.5;
+  --v-onboarding-step-arrow-background: #ffffff;
+}
+
+.v-onboarding-item {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --v-onboarding-overlay-fill: #ffffff;
+    --v-onboarding-overlay-opacity: 0.15;
+    --v-onboarding-step-arrow-background: #1f2937;
+  }
+  
+  .v-onboarding-item {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .v-onboarding-item__description {
+    color: #d1d5db;
+  }
+}
+
+/* Or use a class-based approach */
+.dark {
+  --v-onboarding-overlay-fill: #ffffff;
+  --v-onboarding-overlay-opacity: 0.15;
+  --v-onboarding-step-arrow-background: #1f2937;
+}
+
+.dark .v-onboarding-item {
+  background: #1f2937;
+  border-color: #374151;
+}
+```
+
+## Custom animations
+
+Add custom animations to tooltips:
+
+```css
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.v-onboarding-item {
+  animation: fadeInScale 0.2s ease-out;
+}
+
+/* Pulse animation for arrow */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+[data-popper-arrow]::before {
+  animation: pulse 2s ease-in-out infinite;
+}
+```
+
+## Step-specific classes
+
+Add custom classes to highlighted elements:
+
+```vue
+<script setup lang="ts">
+import type { StepEntity } from 'v-onboarding'
+
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      element: '#important-feature',
+      classList: ['highlight-pulse', 'border-accent']
+    },
+    content: {
+      title: 'Important Feature',
+      description: 'This feature is highlighted with custom classes'
+    }
+  }
+]
+</script>
+
+<style>
+/* Custom classes applied to the element */
+.highlight-pulse {
+  animation: pulse 2s infinite;
+}
+
+.border-accent {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.1);
+  }
+}
+</style>
+```
+
+## Complete styling example
+
+Here's a complete example with custom theme:
+
+```vue
+<template>
+  <div class="app">
+    <VOnboardingWrapper :steps="steps" :options="options" ref="wrapper" />
+    <!-- Your app content -->
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity, VOnboardingWrapperOptions } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const options: VOnboardingWrapperOptions = {
+  overlay: {
+    enabled: true,
+    padding: 8,
+    borderRadius: 12,
+    preventOverlayInteraction: true
+  }
+}
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#feature' },
+    content: { title: 'Feature', description: 'Description here' }
+  }
+]
+</script>
+
+<style>
+/* Custom theme */
+:root {
+  --v-onboarding-overlay-fill: #6366f1;
+  --v-onboarding-overlay-opacity: 0.15;
+  --v-onboarding-step-arrow-background: #ffffff;
+}
+
+.v-onboarding-item {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 24px;
+  color: #ffffff;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.v-onboarding-item__header-title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.v-onboarding-item__description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.v-onboarding-btn-primary {
+  background: #ffffff;
+  color: #667eea;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.v-onboarding-btn-primary:hover {
+  background: #f3f4f6;
+}
+
+.v-onboarding-btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+}
+
+.v-onboarding-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+</style>
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Basic tour" href="/examples/basic-tour" icon="play">
+    Create your first tour
+  </Card>
+  <Card title="Configuration" href="/api/options" icon="gear">
+    Explore all wrapper options
+  </Card>
+  <Card title="StepEntity API" href="/api/step-entity" icon="book">
+    Complete step configuration
+  </Card>
+  <Card title="Custom UI slots" href="/guides/custom-ui" icon="code">
+    Build completely custom tooltips
+  </Card>
+</CardGroup>

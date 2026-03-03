@@ -1,0 +1,420 @@
+---
+title: VOnboardingWrapper
+description: The main wrapper component that manages the onboarding flow and step navigation.
+---
+
+`VOnboardingWrapper` is the core component that orchestrates the entire onboarding experience. It manages step navigation, lifecycle hooks, overlay rendering, and provides methods to control the onboarding flow programmatically.
+
+## Props
+
+<ParamField path="steps" type="StepEntity[]" required>
+  An array of step objects that define the onboarding tour. Each step must include content, an element to attach to, and optional configuration.
+
+  ```typescript
+  interface StepEntity {
+    content: {
+      title: string
+      description?: string
+      html?: boolean
+    }
+    attachTo: {
+      element: AttachableElement
+      classList?: string[]
+    }
+    on?: {
+      beforeStep?: (options?: onBeforeStepOptions) => void | Promise<void>
+      afterStep?: (options?: onAfterStepOptions) => void | Promise<void>
+    }
+    options?: VOnboardingWrapperOptions
+  }
+  ```
+
+  **AttachableElement** can be:
+  - A CSS selector string (e.g., `"#my-element"`)
+  - A function that returns an Element (e.g., `() => document.querySelector('.target')`)
+  - A Vue ref containing an Element
+</ParamField>
+
+<ParamField path="options" type="VOnboardingWrapperOptions">
+  Global configuration options that apply to all steps unless overridden at the step level.
+
+  <ParamField path="options.popper" type="Parameters<typeof createPopper>[2]">
+    Popper.js configuration options for positioning the step UI. See [Popper.js documentation](https://popper.js.org/docs/v2/constructors/#options) for all available options.
+
+    **Default:**
+    ```javascript
+    {
+      modifiers: [
+        {
+          name: 'arrow',
+          options: { padding: 8 }
+        },
+        {
+          name: 'flip',
+          options: {
+            fallbackPlacements: ['top', 'bottom', 'right', 'left']
+          }
+        },
+        {
+          name: 'preventOverflow',
+          options: {
+            boundary: 'viewport',
+            padding: 8,
+            tether: false,
+            altAxis: true
+          }
+        }
+      ]
+    }
+    ```
+  </ParamField>
+
+  <ParamField path="options.overlay" type="SvgOverlayOptions">
+    Configuration for the SVG overlay that highlights the target element.
+
+    <ParamField path="options.overlay.enabled" type="boolean" default="true">
+      Whether to show the overlay that darkens the page except for the target element.
+    </ParamField>
+
+    <ParamField path="options.overlay.padding" type="number | object" default="0">
+      Padding around the highlighted element. Can be a single number or an object with `top`, `right`, `bottom`, `left` properties.
+    </ParamField>
+
+    <ParamField path="options.overlay.borderRadius" type="number | object" default="0">
+      Border radius for the highlighted area. Can be a single number or an object with `leftTop`, `rightTop`, `rightBottom`, `leftBottom` properties.
+    </ParamField>
+
+    <ParamField path="options.overlay.preventOverlayInteraction" type="boolean" default="true">
+      When true, prevents user interaction with elements outside the highlighted area by setting pointer-events appropriately.
+    </ParamField>
+  </ParamField>
+
+  <ParamField path="options.scrollToStep" type="object">
+    Configuration for automatically scrolling to the target element.
+
+    <ParamField path="options.scrollToStep.enabled" type="boolean" default="true">
+      Whether to automatically scroll the target element into view.
+    </ParamField>
+
+    <ParamField path="options.scrollToStep.options" type="ScrollIntoViewOptions">
+      Standard `scrollIntoView` options.
+
+      **Default:**
+      ```javascript
+      {
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      }
+      ```
+    </ParamField>
+  </ParamField>
+
+  <ParamField path="options.autoFinishByExit" type="boolean" default="true">
+    Whether clicking the exit button should automatically call the `finish()` method and emit the `finish` event.
+  </ParamField>
+
+  <ParamField path="options.hideButtons" type="object">
+    Control which buttons are visible in the default step UI.
+
+    <ParamField path="options.hideButtons.previous" type="boolean" default="false">
+      Hide the "Previous" button.
+    </ParamField>
+
+    <ParamField path="options.hideButtons.next" type="boolean" default="false">
+      Hide the "Next" button.
+    </ParamField>
+
+    <ParamField path="options.hideButtons.exit" type="boolean" default="false">
+      Hide the "Exit" (close) button.
+    </ParamField>
+  </ParamField>
+
+  <ParamField path="options.labels" type="object">
+    Customize button labels for internationalization or custom text.
+
+    <ParamField path="options.labels.previousButton" type="string" default="'Previous'">
+      Label for the previous button.
+    </ParamField>
+
+    <ParamField path="options.labels.nextButton" type="string" default="'Next'">
+      Label for the next button.
+    </ParamField>
+
+    <ParamField path="options.labels.finishButton" type="string" default="'Finish'">
+      Label for the finish button (shown on the last step).
+    </ParamField>
+  </ParamField>
+
+  <ParamField path="options.hideNextStepDuringHook" type="boolean" default="false">
+    When true, hides the next step while `beforeStep` and `afterStep` hooks are executing. Useful for preventing flicker during async operations.
+  </ParamField>
+</ParamField>
+
+## Methods
+
+These methods are exposed via `defineExpose` and can be accessed through a template ref or the `useVOnboarding` composable.
+
+<ResponseField name="start" type="() => void">
+  Starts the onboarding flow from the first step (index 0).
+
+  ```vue
+  <script setup>
+  import { ref } from 'vue'
+  
+  const wrapper = ref(null)
+  
+  function startTour() {
+    wrapper.value.start()
+  }
+  </script>
+  
+  <template>
+    <VOnboardingWrapper ref="wrapper" :steps="steps" />
+    <button @click="startTour">Start Tour</button>
+  </template>
+  ```
+</ResponseField>
+
+<ResponseField name="finish" type="() => void">
+  Ends the onboarding flow, emits the `finish` event, runs cleanup for the current step, and restores pointer interactions.
+
+  ```typescript
+  wrapper.value.finish()
+  ```
+</ResponseField>
+
+<ResponseField name="goToStep" type="(target: number | ((current: number) => number)) => void">
+  Navigates to a specific step by index or using a function that computes the target index.
+
+  The function:
+  - Accepts either a step index number or a function that receives the current index and returns the target index
+  - Triggers `afterStep` hook for the current step
+  - Triggers `beforeStep` hook for the target step
+  - Handles cleanup and setup between steps
+
+  ```typescript
+  // Go to step 3
+  wrapper.value.goToStep(2)
+  
+  // Go to next step
+  wrapper.value.goToStep(current => current + 1)
+  
+  // Go to previous step
+  wrapper.value.goToStep(current => current - 1)
+  ```
+</ResponseField>
+
+## Events
+
+<ResponseField name="finish" type="() => void">
+  Emitted when the onboarding flow completes, either by reaching the last step and clicking "Finish" or by calling the `finish()` method programmatically.
+
+  ```vue
+  <VOnboardingWrapper
+    :steps="steps"
+    @finish="handleFinish"
+  />
+  ```
+</ResponseField>
+
+<ResponseField name="exit" type="(index: number) => void">
+  Emitted when the user clicks the exit button. Receives the current step index as a parameter.
+
+  <Note>
+    If `autoFinishByExit` is `true` (default), the `finish` event will also be emitted after `exit`.
+  </Note>
+
+  ```vue
+  <VOnboardingWrapper
+    :steps="steps"
+    @exit="handleExit"
+  />
+  ```
+</ResponseField>
+
+## Default slot
+
+The default slot allows you to customize the UI for each step. It receives scoped props with information about the current step and navigation methods.
+
+### Slot props
+
+<ResponseField name="step" type="StepEntity">
+  The current step object containing content, attachTo configuration, and options.
+</ResponseField>
+
+<ResponseField name="index" type="number">
+  The current step index (0-based).
+</ResponseField>
+
+<ResponseField name="isFirst" type="boolean">
+  Whether the current step is the first step.
+</ResponseField>
+
+<ResponseField name="isLast" type="boolean">
+  Whether the current step is the last step.
+</ResponseField>
+
+<ResponseField name="next" type="() => void">
+  Function to navigate to the next step. Automatically calls `finish()` if on the last step.
+</ResponseField>
+
+<ResponseField name="previous" type="() => void">
+  Function to navigate to the previous step.
+</ResponseField>
+
+<ResponseField name="exit" type="() => void">
+  Function to exit the onboarding flow. Emits the `exit` event with the current step index.
+</ResponseField>
+
+### Usage
+
+If you don't provide a custom slot, the default `VOnboardingStep` component will be used. To customize the UI:
+
+```vue
+<VOnboardingWrapper :steps="steps">
+  <template #default="{ step, next, previous, exit, isFirst, isLast }">
+    <div class="custom-step">
+      <h3>{{ step.content.title }}</h3>
+      <p>{{ step.content.description }}</p>
+      
+      <div class="actions">
+        <button v-if="!isFirst" @click="previous">Back</button>
+        <button @click="exit">Skip</button>
+        <button @click="next">
+          {{ isLast ? 'Done' : 'Continue' }}
+        </button>
+      </div>
+    </div>
+  </template>
+</VOnboardingWrapper>
+```
+
+<Note>
+  When using a custom slot, you're responsible for implementing the entire step UI, including positioning with Popper.js if needed. For simpler customization, consider using the `VOnboardingStep` component within the slot.
+</Note>
+
+## Lifecycle hooks
+
+Each step can define `beforeStep` and `afterStep` hooks that run during navigation:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#step1' },
+    content: {
+      title: 'Welcome'
+    },
+    on: {
+      beforeStep: async ({ index, step, direction, isForward, isBackward }) => {
+        console.log('About to show step', index)
+        // Perform async operations
+        await loadData()
+      },
+      afterStep: async ({ index, step, direction, isForward, isBackward }) => {
+        console.log('Leaving step', index)
+        // Cleanup or tracking
+      }
+    }
+  }
+]
+```
+
+### Hook parameters
+
+Both hooks receive the same options object:
+
+<ResponseField name="index" type="number">
+  The step index.
+</ResponseField>
+
+<ResponseField name="step" type="StepEntity">
+  The step object.
+</ResponseField>
+
+<ResponseField name="direction" type="1 | -1">
+  The navigation direction: `1` for forward, `-1` for backward.
+</ResponseField>
+
+<ResponseField name="isForward" type="boolean">
+  Whether navigating forward.
+</ResponseField>
+
+<ResponseField name="isBackward" type="boolean">
+  Whether navigating backward.
+</ResponseField>
+
+## Complete example
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+
+const steps = [
+  {
+    attachTo: { element: '#header' },
+    content: {
+      title: 'Welcome!',
+      description: 'Let\'s take a quick tour of the app.'
+    }
+  },
+  {
+    attachTo: { element: '#sidebar' },
+    content: {
+      title: 'Navigation',
+      description: 'Use the sidebar to access different sections.'
+    },
+    options: {
+      popper: {
+        placement: 'right'
+      }
+    }
+  },
+  {
+    attachTo: { element: '#search' },
+    content: {
+      title: 'Search',
+      description: 'Find anything quickly with search.'
+    },
+    on: {
+      beforeStep: async () => {
+        // Focus search input when step appears
+        document.querySelector('#search').focus()
+      }
+    }
+  }
+]
+
+const options = {
+  labels: {
+    previousButton: 'Back',
+    nextButton: 'Continue',
+    finishButton: 'Get Started'
+  },
+  overlay: {
+    padding: 8,
+    borderRadius: 8
+  }
+}
+
+function handleFinish() {
+  console.log('Tour completed!')
+  // Save completion state
+}
+</script>
+
+<template>
+  <VOnboardingWrapper
+    ref="wrapper"
+    :steps="steps"
+    :options="options"
+    @finish="handleFinish"
+  />
+  
+  <button @click="wrapper.start()">Start Tour</button>
+</template>
+```

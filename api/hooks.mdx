@@ -1,0 +1,433 @@
+---
+title: Hooks
+description: Lifecycle hooks for executing code before and after onboarding steps
+---
+
+Hooks allow you to execute custom code before and after each step in your onboarding tour. They're perfect for opening modals, fetching data, adding animations, or any other setup/cleanup tasks.
+
+## Hook types
+
+Each step can define two hooks:
+
+- **`beforeStep`** - Called before the step is displayed
+- **`afterStep`** - Called after the step is completed or when moving away from it
+
+Both hooks support synchronous and asynchronous execution.
+
+## Hook options
+
+Both hooks receive an options object with information about the current step and navigation direction:
+
+```typescript
+interface onBeforeStepOptions {
+  index: number;        // Current step index (0-based)
+  step: StepEntity;     // The step configuration object
+  direction: number;    // 1 for forward, -1 for backward
+  isForward: boolean;   // true when moving forward
+  isBackward: boolean;  // true when moving backward
+}
+
+interface onAfterStepOptions {
+  index: number;        // Current step index (0-based)
+  step: StepEntity;     // The step configuration object
+  direction: number;    // 1 for forward, -1 for backward
+  isForward: boolean;   // true when moving forward
+  isBackward: boolean;  // true when moving backward
+}
+```
+
+<ParamField path="index" type="number">
+  The zero-based index of the current step in the steps array.
+</ParamField>
+
+<ParamField path="step" type="StepEntity">
+  The complete step configuration object, including content, attachTo, options, and hooks.
+</ParamField>
+
+<ParamField path="direction" type="number">
+  The direction of navigation:
+  - `1` - Moving forward (Next button)
+  - `-1` - Moving backward (Previous button)
+</ParamField>
+
+<ParamField path="isForward" type="boolean">
+  Convenience property that's `true` when `direction === 1`.
+</ParamField>
+
+<ParamField path="isBackward" type="boolean">
+  Convenience property that's `true` when `direction === -1`.
+</ParamField>
+
+## Hook execution flow
+
+When navigating between steps, hooks are called in this order:
+
+1. **Old step's `afterStep`** hook (cleanup)
+2. **New step's `beforeStep`** hook (setup)
+3. Step tooltip is displayed
+
+From `src/components/VOnboardingWrapper.vue` (lines 75-127):
+
+```typescript
+function goToStep(target: number | ((current: number) => number)): void {
+  const newIndex = typeof target === 'function' ? target(currentIndex.value) : target
+  const oldIndex = currentIndex.value
+
+  if (newIndex === oldIndex) return
+
+  const direction = newIndex > oldIndex ? Direction.FORWARD : Direction.BACKWARD
+  const oldStep = props.steps[oldIndex]
+  const newStep = props.steps[newIndex]
+
+  if (getStepOptions(newStep)?.hideNextStepDuringHook) {
+    showStep.value = false  // Hide tooltip during async setup
+  }
+
+  currentIndex.value = newIndex
+
+  ;(async () => {
+    if (oldStep) await runCleanup(oldStep, oldIndex, direction)    // afterStep
+    if (newStep) await runSetup(newStep, newIndex, direction)      // beforeStep
+    showStep.value = true
+  })()
+}
+```
+
+## beforeStep hook
+
+Called before the step tooltip is displayed. Use this hook for:
+
+- Opening modals or panels
+- Fetching required data
+- Animating elements into view
+- Scrolling to specific positions
+- Enabling features temporarily
+
+### Implementation details
+
+From `src/components/VOnboardingWrapper.vue` (lines 75-89):
+
+```typescript
+function runSetup(step: StepEntity, index: number, direction: Direction) {
+  const element = useGetElement(step.attachTo.element) as HTMLElement
+  const options = getStepOptions(step)
+
+  // Add CSS classes to the attached element
+  if (step.attachTo.classList?.length) {
+    element?.classList.add(...step.attachTo.classList)
+  }
+
+  // Disable interactions outside highlighted area
+  if (options?.overlay?.preventOverlayInteraction) {
+    setInteraction(document.body, 'none')
+    setInteraction(element, 'auto')
+  }
+
+  // Call the beforeStep hook
+  return step.on?.beforeStep?.(createHookOptions(step, index, direction))
+}
+```
+
+### Example
+
+```typescript
+const step = {
+  attachTo: { element: '#profile-modal' },
+  content: {
+    title: 'Profile Settings',
+    description: 'Customize your profile here.'
+  },
+  on: {
+    beforeStep: async ({ index, isForward }) => {
+      console.log(`Setting up step ${index}`);
+      
+      // Open modal before showing the step
+      await openProfileModal();
+      
+      // Wait for animation to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }
+}
+```
+
+## afterStep hook
+
+Called when leaving the step (either forward or backward). Use this hook for:
+
+- Closing modals or panels
+- Cleaning up temporary state
+- Saving user progress
+- Removing event listeners
+- Conditional cleanup based on direction
+
+### Implementation details
+
+From `src/components/VOnboardingWrapper.vue` (lines 91-104):
+
+```typescript
+function runCleanup(step: StepEntity, index: number, direction: Direction) {
+  const element = useGetElement(step.attachTo.element) as HTMLElement
+  const options = getStepOptions(step)
+
+  // Remove CSS classes from the attached element
+  if (step.attachTo.classList?.length) {
+    element?.classList.remove(...step.attachTo.classList)
+  }
+
+  // Restore interactions
+  if (options?.overlay?.preventOverlayInteraction) {
+    restoreInteraction(element)
+  }
+
+  // Call the afterStep hook
+  return step.on?.afterStep?.(createHookOptions(step, index, direction))
+}
+```
+
+### Example
+
+```typescript
+const step = {
+  attachTo: { element: '#settings-panel' },
+  content: {
+    title: 'Settings',
+    description: 'Manage your preferences.'
+  },
+  on: {
+    afterStep: async ({ index, isBackward, isForward }) => {
+      console.log(`Cleaning up step ${index}`);
+      
+      // Only close panel if moving forward
+      if (isForward) {
+        await closeSettingsPanel();
+      }
+      
+      // If going backward, keep panel open
+      if (isBackward) {
+        console.log('User went back, keeping panel open');
+      }
+    }
+  }
+}
+```
+
+## Async/await support
+
+Both hooks support asynchronous operations. The tour will wait for promises to resolve before continuing:
+
+```typescript
+const step = {
+  attachTo: { element: '#data-table' },
+  content: {
+    title: 'Your Data',
+    description: 'View your recent activity.'
+  },
+  on: {
+    beforeStep: async ({ index }) => {
+      // Show loading state
+      showLoading();
+      
+      try {
+        // Fetch data before showing step
+        const data = await fetchUserData();
+        updateTable(data);
+      } finally {
+        hideLoading();
+      }
+    }
+  }
+}
+```
+
+<Note>
+When using async hooks, consider setting `hideNextStepDuringHook: true` in your options to prevent the tooltip from appearing before the setup is complete.
+</Note>
+
+## Practical examples
+
+### Opening and closing a modal
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#open-modal-btn' },
+    content: {
+      title: 'Modal Button',
+      description: 'This button opens the settings modal.'
+    }
+  },
+  {
+    attachTo: { element: '#modal-content' },
+    content: {
+      title: 'Modal Content',
+      description: 'Configure your settings here.'
+    },
+    on: {
+      beforeStep: async () => {
+        // Open modal and wait for animation
+        openModal();
+        await waitForAnimation(300);
+      },
+      afterStep: async ({ isForward }) => {
+        // Only close when moving forward
+        if (isForward) {
+          closeModal();
+          await waitForAnimation(300);
+        }
+      }
+    }
+  },
+  {
+    attachTo: { element: '#save-btn' },
+    content: {
+      title: 'Save',
+      description: 'Save your changes.'
+    }
+  }
+];
+```
+
+### Conditional navigation with data fetching
+
+```typescript
+const step = {
+  attachTo: { element: '#dashboard' },
+  content: {
+    title: 'Dashboard',
+    description: 'Your personalized dashboard.'
+  },
+  options: {
+    hideNextStepDuringHook: true  // Hide tooltip during loading
+  },
+  on: {
+    beforeStep: async ({ index }) => {
+      try {
+        // Fetch dashboard data
+        const data = await api.getDashboard();
+        
+        if (!data) {
+          throw new Error('No data available');
+        }
+        
+        renderDashboard(data);
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        // Could skip this step or show error
+      }
+    }
+  }
+}
+```
+
+### Adding temporary event listeners
+
+```typescript
+const step = {
+  attachTo: { element: '#interactive-demo' },
+  content: {
+    title: 'Try It Out',
+    description: 'Click around to explore the features.'
+  },
+  on: {
+    beforeStep: () => {
+      // Add event listeners
+      document.addEventListener('click', trackInteraction);
+      enableDemoMode();
+    },
+    afterStep: () => {
+      // Clean up
+      document.removeEventListener('click', trackInteraction);
+      disableDemoMode();
+    }
+  }
+}
+```
+
+### Tracking analytics
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#feature-1' },
+    content: {
+      title: 'Feature 1',
+      description: 'This is our main feature.'
+    },
+    on: {
+      beforeStep: ({ index }) => {
+        analytics.track('onboarding_step_viewed', {
+          step_index: index,
+          step_name: 'feature-1'
+        });
+      },
+      afterStep: ({ index, isForward }) => {
+        analytics.track('onboarding_step_completed', {
+          step_index: index,
+          direction: isForward ? 'forward' : 'backward'
+        });
+      }
+    }
+  }
+];
+```
+
+### Highlighting elements with CSS classes
+
+```typescript
+const step = {
+  attachTo: {
+    element: '#submit-button',
+    classList: ['pulse-animation', 'highlight']
+  },
+  content: {
+    title: 'Submit',
+    description: 'Click to submit your form.'
+  },
+  on: {
+    beforeStep: () => {
+      // Classes from attachTo.classList are automatically added
+      console.log('Highlight animation started');
+    },
+    afterStep: () => {
+      // Classes are automatically removed
+      console.log('Highlight animation removed');
+    }
+  }
+}
+```
+
+<Note>
+CSS classes defined in `attachTo.classList` are automatically added before `beforeStep` runs and removed after `afterStep` completes. You don't need to manually manage these classes in your hooks.
+</Note>
+
+## Error handling
+
+If a hook throws an error, it may interrupt the tour. Always handle errors appropriately:
+
+```typescript
+const step = {
+  attachTo: { element: '#api-demo' },
+  content: {
+    title: 'API Integration',
+    description: 'See how our API works.'
+  },
+  on: {
+    beforeStep: async ({ index }) => {
+      try {
+        await fetchApiData();
+      } catch (error) {
+        console.error('Failed to fetch data for step', index, error);
+        // Show fallback UI or skip step
+        showFallbackUI();
+      }
+    }
+  }
+}
+```
+
+## Related
+
+- [Step Entity](/api/step-entity) - Complete step configuration
+- [Options](/api/options) - Configure hideNextStepDuringHook
+- [useVOnboarding](/api/use-v-onboarding) - Programmatic control

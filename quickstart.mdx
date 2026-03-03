@@ -1,80 +1,254 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Build your first onboarding tour in minutes with v-onboarding
 ---
 
-## Get started in three steps
+Get started with v-onboarding by creating a simple interactive tour in your Vue 3 application.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+- v-onboarding installed (see [installation guide](/installation))
+- A Vue 3 project set up
+- Basic knowledge of Vue Composition API
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+## Create your first tour
+
+<Steps>
+  <Step title="Import the components">
+    Import the v-onboarding components and styles in your component:
+
+    ```vue
+    <script setup lang="ts">
+    import { ref } from 'vue'
+    import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+    import 'v-onboarding/dist/style.css'
+    </script>
+    ```
+  </Step>
+
+  <Step title="Define your steps">
+    Create an array of steps that describe your tour. Each step targets an element and displays content:
+
+    ```typescript
+    const steps = [
+      {
+        attachTo: { element: '#welcome-btn' },
+        content: {
+          title: 'Welcome!',
+          description: 'Click here to get started with our app.'
+        }
+      },
+      {
+        attachTo: { element: '#features' },
+        content: {
+          title: 'Features',
+          description: 'Explore all the amazing features we offer.'
+        }
+      },
+      {
+        attachTo: { element: '#profile' },
+        content: {
+          title: 'Your Profile',
+          description: 'Manage your account settings and preferences here.'
+        }
+      }
+    ]
+    ```
+  </Step>
+
+  <Step title="Add the wrapper component">
+    Place the `VOnboardingWrapper` component in your template:
+
+    ```vue
+    <template>
+      <div>
+        <VOnboardingWrapper ref="wrapper" :steps="steps" />
+        
+        <!-- Your app content -->
+        <button id="welcome-btn" @click="wrapper?.start()">
+          Start Tour
+        </button>
+        
+        <div id="features">
+          <h2>Features</h2>
+          <!-- Feature content -->
+        </div>
+        
+        <div id="profile">
+          <h2>Profile</h2>
+          <!-- Profile content -->
+        </div>
+      </div>
+    </template>
+    ```
+  </Step>
+
+  <Step title="Start the tour">
+    Control the tour programmatically using the wrapper ref:
+
+    ```typescript
+    const wrapper = ref(null)
+
+    // Start the tour
+    const startTour = () => {
+      wrapper.value?.start()
+    }
+    ```
+  </Step>
+</Steps>
+
+## Complete example
+
+Here's a complete working example:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+
+const steps = [
+  {
+    attachTo: { element: '#welcome-btn' },
+    content: {
+      title: 'Welcome!',
+      description: 'Click here to get started with our app.'
+    }
+  },
+  {
+    attachTo: { element: '#features' },
+    content: {
+      title: 'Features',
+      description: 'Explore all the amazing features we offer.'
+    }
+  },
+  {
+    attachTo: { element: '#profile' },
+    content: {
+      title: 'Your Profile',
+      description: 'Manage your account settings and preferences here.'
+    }
+  }
+]
+</script>
+
+<template>
+  <div class="app">
+    <VOnboardingWrapper ref="wrapper" :steps="steps" />
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    <header>
+      <button id="welcome-btn" @click="wrapper?.start()">
+        Start Tour
+      </button>
+      <button id="profile">
+        Profile
+      </button>
+    </header>
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    <main>
+      <section id="features">
+        <h2>Features</h2>
+        <p>Discover what makes our app great</p>
+      </section>
+    </main>
+  </div>
+</template>
+```
 
-### Step 2: Deploy your changes
+## Using the composable
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+Alternatively, use the `useVOnboarding` composable for more control:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+const wrapper = ref(null)
+const { start, finish, goToStep } = useVOnboarding(wrapper)
 
-### Step 3: Go live
+const steps = [
+  // ... your steps
+]
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+// Control methods
+const startTour = () => start()
+const skipToEnd = () => goToStep(steps.length - 1)
+const endTour = () => finish()
+</script>
+```
+
+## Using template refs
+
+Instead of CSS selectors, you can attach steps to Vue template refs:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper } from 'v-onboarding'
+
+const wrapper = ref(null)
+const featureButton = ref(null)
+
+const steps = [
+  {
+    attachTo: { element: featureButton }, // Use the ref directly
+    content: {
+      title: 'Important Feature',
+      description: 'This button is ref-based!'
+    }
+  }
+]
+</script>
+
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps" />
+  <button ref="featureButton">Feature</button>
+</template>
+```
+
+## Adding lifecycle hooks
+
+Execute code before or after each step:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#settings' },
+    content: {
+      title: 'Settings',
+      description: 'Customize your experience'
+    },
+    on: {
+      beforeStep: async ({ index, step }) => {
+        console.log(`About to show step ${index}`)
+        // Load data, trigger animations, etc.
+      },
+      afterStep: async ({ index, direction }) => {
+        console.log(`Finished step ${index}`)
+        // Track analytics, cleanup, etc.
+      }
+    }
+  }
+]
+```
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you have a basic tour working, explore more advanced features:
+
+- **Customization**: Learn how to customize the overlay, tooltips, and positioning in the [API reference](/api/v-onboarding-wrapper)
+- **Custom UI**: Build your own step UI using slots
+- **Advanced features**: Explore options like auto-scrolling, custom CSS, and event handling
+- **Examples**: Check out the [examples](/examples/basic-tour) for more complex use cases
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="API Reference" icon="code" href="/api/v-onboarding-wrapper">
+    Explore all available props, events, and options
+  </Card>
+  <Card title="Examples" icon="sparkles" href="/examples/basic-tour">
+    See real-world examples and patterns
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

@@ -1,0 +1,278 @@
+---
+title: Basic tour
+description: Create a simple multi-step product tour with v-onboarding
+---
+
+Learn how to create a basic product tour that guides users through your application's key features.
+
+## Complete example
+
+Here's a complete example of a multi-step tour introducing users to a dashboard application:
+
+<CodeGroup>
+```vue App.vue
+<template>
+  <div class="dashboard">
+    <VOnboardingWrapper ref="wrapper" :steps="steps" @finish="onFinish" />
+    
+    <header id="app-header">
+      <h1>Dashboard</h1>
+      <button @click="startTour" class="help-button">Show Tour</button>
+    </header>
+    
+    <nav id="sidebar">
+      <a href="#">Analytics</a>
+      <a href="#">Reports</a>
+      <a href="#">Settings</a>
+    </nav>
+    
+    <main id="main-content">
+      <div id="stats-widget" class="widget">
+        <h2>Statistics</h2>
+        <p>Your key metrics at a glance</p>
+      </div>
+      
+      <div id="actions-panel" class="widget">
+        <button class="primary">Create Report</button>
+        <button>Export Data</button>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import type { StepEntity } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#app-header' },
+    content: {
+      title: 'Welcome to your Dashboard',
+      description: 'Let us show you around and highlight the key features.'
+    }
+  },
+  {
+    attachTo: { element: '#sidebar' },
+    content: {
+      title: 'Navigation Menu',
+      description: 'Access different sections of the app from here.'
+    }
+  },
+  {
+    attachTo: { element: '#stats-widget' },
+    content: {
+      title: 'Statistics Overview',
+      description: 'Monitor your key performance indicators in real-time.'
+    }
+  },
+  {
+    attachTo: { element: '#actions-panel' },
+    content: {
+      title: 'Quick Actions',
+      description: 'Commonly used actions are available here for easy access.'
+    }
+  }
+]
+
+function startTour() {
+  start()
+}
+
+function onFinish() {
+  console.log('Tour completed!')
+  // Save completion state to localStorage
+  localStorage.setItem('tourCompleted', 'true')
+}
+</script>
+```
+
+```ts types.ts
+import type { StepEntity } from 'v-onboarding'
+
+// Steps are fully typed
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      element: '#welcome',
+      classList: ['highlight-element'] // Optional CSS classes
+    },
+    content: {
+      title: 'Welcome!',
+      description: 'Start your journey here.'
+    }
+  }
+]
+```
+</CodeGroup>
+
+## Element selection methods
+
+You can attach steps to elements using different approaches:
+
+<Tabs>
+  <Tab title="CSS Selector">
+    The simplest method - use any valid CSS selector:
+
+    ```ts
+    const steps: StepEntity[] = [
+      {
+        attachTo: { element: '#my-element' },
+        content: { title: 'Simple selector' }
+      },
+      {
+        attachTo: { element: '.feature-button' },
+        content: { title: 'Class selector' }
+      },
+      {
+        attachTo: { element: '[data-tour="step-1"]' },
+        content: { title: 'Attribute selector' }
+      }
+    ]
+    ```
+  </Tab>
+  
+  <Tab title="Template Ref">
+    Use Vue template refs for reactive elements:
+
+    ```vue
+    <template>
+      <div ref="targetElement">Content</div>
+      <VOnboardingWrapper :steps="steps" />
+    </template>
+
+    <script setup>
+    import { ref } from 'vue'
+
+    const targetElement = ref(null)
+
+    const steps = [
+      {
+        attachTo: { element: targetElement },
+        content: { title: 'Using a ref' }
+      }
+    ]
+    </script>
+    ```
+  </Tab>
+  
+  <Tab title="Function">
+    Use a function for dynamic element selection:
+
+    ```ts
+    const steps: StepEntity[] = [
+      {
+        attachTo: {
+          element: () => document.querySelector('.dynamic-element')
+        },
+        content: { title: 'Dynamic selection' }
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+## Adding CSS classes
+
+You can add custom CSS classes to highlighted elements during the tour:
+
+```ts
+const steps: StepEntity[] = [
+  {
+    attachTo: {
+      element: '#hero-section',
+      classList: ['pulse-animation', 'highlight-border']
+    },
+    content: {
+      title: 'Hero Section',
+      description: 'Your main landing area'
+    }
+  }
+]
+```
+
+```css
+/* These classes are added when the step is active */
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+.highlight-border {
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+```
+
+<Info>
+Classes are automatically added when a step becomes active and removed when it ends.
+</Info>
+
+## HTML content
+
+You can use HTML in step descriptions by setting the `html` flag:
+
+```ts
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#feature' },
+    content: {
+      title: 'New Feature',
+      description: '<strong>Important:</strong> This feature requires <a href="#">premium access</a>.',
+      html: true
+    }
+  }
+]
+```
+
+<Note>
+Be careful when using HTML content - ensure it's sanitized if it comes from user input.
+</Note>
+
+## Auto-start on first visit
+
+Start the tour automatically for first-time users:
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+onMounted(() => {
+  const hasSeenTour = localStorage.getItem('tourCompleted')
+  
+  if (!hasSeenTour) {
+    // Small delay for better UX
+    setTimeout(() => start(), 1000)
+  }
+})
+
+function onFinish() {
+  localStorage.setItem('tourCompleted', 'true')
+}
+</script>
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Template refs" href="/examples/template-refs" icon="link">
+    Learn how to use Vue refs for dynamic elements
+  </Card>
+  <Card title="Lifecycle hooks" href="/examples/lifecycle-hooks" icon="bolt">
+    Add async operations and analytics tracking
+  </Card>
+  <Card title="Custom styling" href="/examples/custom-styling" icon="palette">
+    Customize the appearance with CSS variables
+  </Card>
+  <Card title="Configuration" href="/api/options" icon="gear">
+    Explore all available options
+  </Card>
+</CardGroup>

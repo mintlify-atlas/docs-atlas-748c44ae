@@ -1,0 +1,408 @@
+---
+title: Nuxt integration
+description: Use v-onboarding in Nuxt 3+ applications with the official module
+---
+
+The v-onboarding Nuxt module provides automatic component registration, composable imports, and SSR compatibility.
+
+## Installation
+
+Install the package:
+
+<CodeGroup>
+```bash npm
+npm install v-onboarding
+```
+
+```bash yarn
+yarn add v-onboarding
+```
+
+```bash pnpm
+pnpm add v-onboarding
+```
+</CodeGroup>
+
+## Setup
+
+<Steps>
+
+### Add the module
+
+Register the module in `nuxt.config.ts`:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt']
+})
+```
+
+### Start using components
+
+Components and composables are auto-imported:
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper ref="wrapper" :steps="steps" />
+    <button id="my-button">Click me</button>
+  </div>
+</template>
+
+<script setup>
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps = [
+  {
+    attachTo: { element: '#my-button' },
+    content: {
+      title: 'Welcome!',
+      description: 'This is your first step.'
+    }
+  }
+]
+
+onMounted(() => start())
+</script>
+```
+
+</Steps>
+
+<Info>
+No imports needed! The module automatically registers `VOnboardingWrapper`, `VOnboardingStep`, and `useVOnboarding`.
+</Info>
+
+## Module options
+
+Customize the module behavior:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt'],
+  vOnboarding: {
+    components: true,   // Auto-import components
+    composables: true,  // Auto-import useVOnboarding
+    css: true           // Include default styles
+  }
+})
+```
+
+### Configuration reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `components` | `boolean` | `true` | Auto-import `VOnboardingWrapper` and `VOnboardingStep` |
+| `composables` | `boolean` | `true` | Auto-import `useVOnboarding` composable |
+| `css` | `boolean` | `true` | Include default stylesheet in build |
+
+### Disable auto-imports
+
+If you prefer manual imports:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt'],
+  vOnboarding: {
+    components: false,
+    composables: false,
+    css: false  // Provide your own styles
+  }
+})
+```
+
+Then import manually:
+
+```vue
+<script setup>
+import { VOnboardingWrapper, VOnboardingStep, useVOnboarding } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+</script>
+```
+
+## Module implementation
+
+The Nuxt module is defined in `module.ts` and handles registration:
+
+```typescript
+export default defineNuxtModule<ModuleOptions>({
+  meta: {
+    name: 'v-onboarding',
+    configKey: 'vOnboarding',
+    compatibility: {
+      nuxt: '>=3.0.0'
+    }
+  },
+  defaults: {
+    components: true,
+    composables: true,
+    css: true
+  },
+  setup(options, nuxt) {
+    // Auto-import stylesheet
+    if (options.css) {
+      nuxt.options.css.push('v-onboarding/dist/style.css')
+    }
+
+    // Register components as client-only
+    if (options.components) {
+      addComponent({
+        name: 'VOnboardingWrapper',
+        filePath: 'v-onboarding',
+        export: 'VOnboardingWrapper',
+        mode: 'client'
+      })
+
+      addComponent({
+        name: 'VOnboardingStep',
+        filePath: 'v-onboarding',
+        export: 'VOnboardingStep',
+        mode: 'client'
+      })
+    }
+
+    // Auto-import composable
+    if (options.composables) {
+      addImports({
+        name: 'useVOnboarding',
+        as: 'useVOnboarding',
+        from: 'v-onboarding'
+      })
+    }
+  }
+})
+```
+
+## SSR considerations
+
+The module automatically handles SSR compatibility:
+
+<Accordion title="Why client-only components?">
+v-onboarding uses browser-specific APIs:
+- `window` and `document` objects
+- `ResizeObserver` for element tracking
+- Popper.js for positioning
+- `scrollIntoView` for auto-scrolling
+
+These aren't available during server-side rendering. The module registers components with `mode: 'client'` (module.ts:35, 42) to ensure they only render on the client.
+</Accordion>
+
+<Warning>
+No `<ClientOnly>` wrapper needed - the module handles this automatically.
+</Warning>
+
+### How it works
+
+When you use `VOnboardingWrapper` in your template:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps" />
+</template>
+```
+
+Nuxt automatically wraps it as if you wrote:
+
+```vue
+<template>
+  <ClientOnly>
+    <VOnboardingWrapper :steps="steps" />
+  </ClientOnly>
+</template>
+```
+
+## Auto-imported exports
+
+The module makes these available globally:
+
+### Components
+
+- `VOnboardingWrapper` - Main tour component
+- `VOnboardingStep` - Step tooltip component
+
+### Composables
+
+- `useVOnboarding(wrapperRef)` - Tour control composable
+
+```typescript
+const { start, finish, goToStep } = useVOnboarding(wrapper)
+```
+
+## Manual setup alternative
+
+If you can't use the Nuxt module, create a client-only plugin:
+
+<Steps>
+
+### Create the plugin
+
+Create `plugins/v-onboarding.client.ts`:
+
+```typescript plugins/v-onboarding.client.ts
+import { VOnboardingWrapper, VOnboardingStep } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.component('VOnboardingWrapper', VOnboardingWrapper)
+  nuxtApp.vueApp.component('VOnboardingStep', VOnboardingStep)
+})
+```
+
+<Info>
+The `.client.ts` suffix ensures the plugin only runs on the client.
+</Info>
+
+### Import the composable
+
+Manually import `useVOnboarding`:
+
+```vue
+<script setup>
+import { useVOnboarding } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+</script>
+```
+
+</Steps>
+
+## Complete Nuxt example
+
+```vue pages/index.vue
+<template>
+  <div>
+    <VOnboardingWrapper
+      ref="wrapper"
+      :steps="steps"
+      @finish="onFinish"
+    />
+
+    <header>
+      <h1 id="welcome">Welcome to My Nuxt App</h1>
+      <nav>
+        <NuxtLink id="about" to="/about">About</NuxtLink>
+        <NuxtLink id="contact" to="/contact">Contact</NuxtLink>
+      </nav>
+    </header>
+
+    <main id="content">
+      <p>Your main content here...</p>
+    </main>
+
+    <button @click="start()" class="tour-btn">
+      Start Tour
+    </button>
+  </div>
+</template>
+
+<script setup>
+// No imports needed - auto-imported by module!
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps = [
+  {
+    attachTo: { element: '#welcome' },
+    content: {
+      title: 'Welcome!',
+      description: 'Thanks for visiting. Let us show you around.'
+    }
+  },
+  {
+    attachTo: { element: '#about' },
+    content: {
+      title: 'Learn More',
+      description: 'Check out our about page to learn more.'
+    },
+    options: {
+      popper: { placement: 'bottom' }
+    }
+  },
+  {
+    attachTo: { element: '#contact' },
+    content: {
+      title: 'Get in Touch',
+      description: 'Have questions? Contact us anytime.'
+    },
+    options: {
+      popper: { placement: 'bottom' }
+    }
+  },
+  {
+    attachTo: { element: '#content' },
+    content: {
+      title: 'Main Content',
+      description: 'This is where the magic happens!'
+    }
+  }
+]
+
+const onFinish = () => {
+  localStorage.setItem('tour_completed', 'true')
+}
+
+// Auto-start for first-time users
+onMounted(() => {
+  const hasSeenTour = localStorage.getItem('tour_completed')
+  if (!hasSeenTour) {
+    setTimeout(start, 500)  // Small delay for better UX
+  }
+})
+</script>
+
+<style scoped>
+.tour-btn {
+  padding: 12px 24px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+</style>
+```
+
+## Troubleshooting
+
+<Accordion title="Components not auto-importing">
+Ensure the module is registered correctly:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt']  // Not 'v-onboarding'
+})
+```
+
+Restart your dev server after adding the module.
+</Accordion>
+
+<Accordion title="Hydration mismatch warnings">
+This shouldn't happen with the module (components are client-only), but if you see warnings:
+
+1. Make sure you're using the module (not manual imports)
+2. Check that you haven't wrapped components in `<ClientOnly>` (not needed)
+3. Verify you're on Nuxt 3.0.0 or higher
+</Accordion>
+
+<Accordion title="Styles not loading">
+If styles aren't applied:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt'],
+  vOnboarding: {
+    css: true  // Make sure this is true
+  }
+})
+```
+
+Or manually import:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  css: ['v-onboarding/dist/style.css']
+})
+```
+</Accordion>

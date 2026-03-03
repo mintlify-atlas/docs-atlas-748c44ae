@@ -1,0 +1,401 @@
+---
+title: CSS variables
+description: Customize the appearance of v-onboarding using CSS custom properties
+---
+
+v-onboarding uses CSS variables (custom properties) to control the appearance of the overlay and step tooltips. You can override these variables to match your application's design system.
+
+## Available variables
+
+### Overlay
+
+Control the dark overlay that highlights the active step element.
+
+<ParamField path="--v-onboarding-overlay-fill" type="color" default="black">
+  The fill color of the overlay. Typically a dark color.
+  
+  ```css
+  :root {
+    --v-onboarding-overlay-fill: black;
+  }
+  ```
+</ParamField>
+
+<ParamField path="--v-onboarding-overlay-opacity" type="number" default="0.5">
+  The opacity of the overlay (0 to 1). Controls how dark the overlay appears.
+  
+  ```css
+  :root {
+    --v-onboarding-overlay-opacity: 0.5;
+  }
+  ```
+</ParamField>
+
+<ParamField path="--v-onboarding-overlay-z" type="number" default="10">
+  The z-index of the overlay layer. Ensure it's above your content but below the step tooltip.
+  
+  ```css
+  :root {
+    --v-onboarding-overlay-z: 10;
+  }
+  ```
+</ParamField>
+
+### Step tooltip
+
+Control the appearance of the step tooltip and its arrow.
+
+<ParamField path="--v-onboarding-step-z" type="number" default="20">
+  The z-index of the step tooltip. Should be higher than the overlay z-index.
+  
+  ```css
+  :root {
+    --v-onboarding-step-z: 20;
+  }
+  ```
+</ParamField>
+
+<ParamField path="--v-onboarding-step-arrow-background" type="color" default="white">
+  The background color of the Popper arrow that points to the highlighted element.
+  
+  ```css
+  :root {
+    --v-onboarding-step-arrow-background: white;
+  }
+  ```
+</ParamField>
+
+## Usage
+
+### Global customization
+
+Define variables in your global CSS to apply them throughout your application:
+
+```css
+:root {
+  --v-onboarding-overlay-fill: #1a1a1a;
+  --v-onboarding-overlay-opacity: 0.7;
+  --v-onboarding-overlay-z: 100;
+  --v-onboarding-step-z: 101;
+  --v-onboarding-step-arrow-background: #ffffff;
+}
+```
+
+### Per-step customization
+
+Use CSS classes to apply different styles to individual steps:
+
+```css
+/* Light overlay for certain steps */
+.light-overlay {
+  --v-onboarding-overlay-fill: white;
+  --v-onboarding-overlay-opacity: 0.3;
+}
+
+/* Accent color overlay */
+.accent-overlay {
+  --v-onboarding-overlay-fill: #3b82f6;
+  --v-onboarding-overlay-opacity: 0.15;
+}
+
+/* Custom arrow color */
+.dark-tooltip {
+  --v-onboarding-step-arrow-background: #1f2937;
+}
+```
+
+Then apply the class to specific steps:
+
+```typescript
+const steps = [
+  {
+    attachTo: {
+      element: '#welcome',
+      classList: ['accent-overlay']
+    },
+    content: {
+      title: 'Welcome',
+      description: 'Get started with our app.'
+    }
+  },
+  {
+    attachTo: {
+      element: '#features',
+      classList: ['light-overlay']
+    },
+    content: {
+      title: 'Features',
+      description: 'Explore what you can do.'
+    }
+  }
+];
+```
+
+### Dark mode support
+
+Adapt the overlay appearance for dark mode:
+
+```css
+:root {
+  /* Light mode */
+  --v-onboarding-overlay-fill: black;
+  --v-onboarding-overlay-opacity: 0.5;
+  --v-onboarding-step-arrow-background: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode - use lighter overlay */
+    --v-onboarding-overlay-fill: white;
+    --v-onboarding-overlay-opacity: 0.2;
+    --v-onboarding-step-arrow-background: #1f2937;
+  }
+}
+```
+
+Or use a class-based approach:
+
+```css
+.light-theme {
+  --v-onboarding-overlay-fill: black;
+  --v-onboarding-overlay-opacity: 0.6;
+}
+
+.dark-theme {
+  --v-onboarding-overlay-fill: white;
+  --v-onboarding-overlay-opacity: 0.15;
+}
+```
+
+## Complete examples
+
+### Branded overlay colors
+
+```css
+/* Primary brand color overlay */
+:root {
+  --brand-primary: #3b82f6;
+  --v-onboarding-overlay-fill: var(--brand-primary);
+  --v-onboarding-overlay-opacity: 0.2;
+}
+```
+
+### High contrast mode
+
+```css
+.high-contrast {
+  --v-onboarding-overlay-fill: black;
+  --v-onboarding-overlay-opacity: 0.85;
+  --v-onboarding-step-arrow-background: yellow;
+}
+```
+
+### Subtle overlay
+
+```css
+:root {
+  --v-onboarding-overlay-fill: #6b7280;
+  --v-onboarding-overlay-opacity: 0.3;
+}
+```
+
+### Dynamic theme with JavaScript
+
+```javascript
+// Change overlay color based on step
+const steps = [
+  {
+    attachTo: { element: '#intro' },
+    content: { title: 'Introduction' },
+    on: {
+      beforeStep: () => {
+        document.documentElement.style.setProperty(
+          '--v-onboarding-overlay-fill', 
+          '#3b82f6'
+        );
+      }
+    }
+  },
+  {
+    attachTo: { element: '#features' },
+    content: { title: 'Features' },
+    on: {
+      beforeStep: () => {
+        document.documentElement.style.setProperty(
+          '--v-onboarding-overlay-fill', 
+          '#8b5cf6'
+        );
+      }
+    }
+  }
+];
+```
+
+## Styling the default step component
+
+While CSS variables control the overlay and z-index, you can also style the default step tooltip using standard CSS classes:
+
+```css
+/* Container */
+.v-onboarding-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  max-width: 360px;
+}
+
+/* Header */
+.v-onboarding-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.v-onboarding-item__header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.v-onboarding-item__header-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+}
+
+.v-onboarding-item__header-close:hover {
+  color: #111827;
+}
+
+/* Description */
+.v-onboarding-item__description {
+  color: #6b7280;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Actions */
+.v-onboarding-item__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Buttons */
+.v-onboarding-btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.v-onboarding-btn-primary:hover {
+  background: #2563eb;
+}
+
+.v-onboarding-btn-secondary {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v-onboarding-btn-secondary:hover {
+  border-color: #9ca3af;
+  color: #111827;
+}
+```
+
+## Advanced: Custom step component
+
+For complete control over styling, you can provide a custom step component using the default slot:
+
+```vue
+<template>
+  <VOnboardingWrapper :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast }">
+      <div class="custom-step">
+        <h3>{{ step.content.title }}</h3>
+        <p>{{ step.content.description }}</p>
+        <div class="custom-actions">
+          <button v-if="!isFirst" @click="previous">Back</button>
+          <button @click="isLast ? exit() : next()">
+            {{ isLast ? 'Done' : 'Next' }}
+          </button>
+        </div>
+      </div>
+    </template>
+  </VOnboardingWrapper>
+</template>
+
+<style scoped>
+.custom-step {
+  /* Full custom styling */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.custom-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.custom-actions button {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid white;
+  background: transparent;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.custom-actions button:hover {
+  background: white;
+  color: #667eea;
+}
+</style>
+```
+
+## Z-index considerations
+
+Ensure proper layering by setting z-index values appropriately:
+
+```css
+:root {
+  /* Your app layers */
+  --app-content-z: 1;
+  --app-header-z: 5;
+  --app-modal-z: 50;
+  
+  /* Onboarding layers */
+  --v-onboarding-overlay-z: 100;  /* Above all app content */
+  --v-onboarding-step-z: 101;     /* Above the overlay */
+}
+```
+
+## Related
+
+- [Step Entity](/api/step-entity) - Configure step structure
+- [Options](/api/options) - Configure behavior
+- [VOnboardingWrapper](/api/v-onboarding-wrapper) - Main component API

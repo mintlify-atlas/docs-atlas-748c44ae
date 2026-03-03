@@ -1,0 +1,346 @@
+---
+title: Basic usage
+description: Learn how to create and control onboarding tours with v-onboarding
+---
+
+Create guided tours by defining steps and controlling navigation with the useVOnboarding composable.
+
+## Defining steps
+
+Each step follows the `StepEntity` interface and requires at minimum an element to attach to and content to display:
+
+```typescript
+interface StepEntity {
+  content: {
+    title: string;
+    description?: string;
+    html?: boolean
+  }
+  attachTo: {
+    element: AttachableElement,
+    classList?: string[]
+  }
+  on?: {
+    beforeStep?: (options?: onBeforeStepOptions) => void | Promise<void>
+    afterStep?: (options?: onAfterStepOptions) => void | Promise<void>
+  },
+  options?: VOnboardingWrapperOptions
+}
+```
+
+<Steps>
+
+### Create your steps array
+
+Define the tour steps with content and target elements:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#welcome' },
+    content: {
+      title: 'Welcome!',
+      description: 'Thanks for trying our app. Let us show you around.'
+    }
+  },
+  {
+    attachTo: { element: '#dashboard-btn' },
+    content: {
+      title: 'Dashboard',
+      description: 'View your stats and analytics here.'
+    }
+  }
+]
+```
+
+### Add the wrapper component
+
+Place `VOnboardingWrapper` in your template with a ref:
+
+```vue
+<template>
+  <VOnboardingWrapper
+    ref="wrapper"
+    :steps="steps"
+    @finish="onFinish"
+    @exit="onExit"
+  />
+</template>
+```
+
+### Control the tour
+
+Use the `useVOnboarding` composable to control navigation:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const wrapper = ref(null)
+const { start, finish, goToStep } = useVOnboarding(wrapper)
+
+// Start the tour
+const startTour = () => start()
+
+// Skip to a specific step
+const skipToStep3 = () => goToStep(2)
+
+// End the tour early
+const endTour = () => finish()
+</script>
+```
+
+</Steps>
+
+## Attaching to elements
+
+The `attachTo.element` property accepts three types of values for maximum flexibility.
+
+<Tabs>
+  <Tab title="CSS selectors">
+    Use any valid CSS selector string:
+
+    ```typescript
+    const steps = [
+      {
+        attachTo: { element: '#my-button' },
+        content: { title: 'Click here' }
+      },
+      {
+        attachTo: { element: '.nav-item:first-child' },
+        content: { title: 'Navigation' }
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="Vue refs">
+    Pass template refs directly for dynamic elements:
+
+    ```vue
+    <template>
+      <button ref="myButton">Click me</button>
+      <VOnboardingWrapper :steps="steps" />
+    </template>
+
+    <script setup>
+    import { ref } from 'vue'
+
+    const myButton = ref(null)
+
+    const steps = [
+      {
+        attachTo: { element: myButton },
+        content: { title: 'This button' }
+      }
+    ]
+    </script>
+    ```
+  </Tab>
+  <Tab title="Getter functions">
+    Use functions for dynamic element resolution:
+
+    ```typescript
+    const steps = [
+      {
+        attachTo: {
+          element: () => document.querySelector('.dynamic-element')
+        },
+        content: { title: 'Dynamic element' }
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+## Adding CSS classes
+
+Highlight elements by adding classes during the step:
+
+```typescript
+const steps = [
+  {
+    attachTo: {
+      element: '#my-element',
+      classList: ['highlight', 'pulse']
+    },
+    content: { title: 'Notice this!' }
+  }
+]
+```
+
+<Info>
+Classes are automatically added when the step begins and removed when it ends.
+</Info>
+
+## Controlling navigation
+
+The `useVOnboarding` composable provides methods to control tour flow:
+
+```typescript
+const { start, finish, goToStep } = useVOnboarding(wrapper)
+
+// Start from the first step
+start()
+
+// End the tour
+finish()
+
+// Jump to a specific step (0-based index)
+goToStep(3)
+
+// Use a function to calculate the next step
+goToStep(current => current + 2)
+```
+
+<Note>
+Calling `goToStep` triggers `afterStep` on the current step and `beforeStep` on the target step.
+</Note>
+
+## Lifecycle hooks
+
+Run logic before or after each step with lifecycle hooks:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#dashboard' },
+    content: { title: 'Dashboard' },
+    on: {
+      beforeStep: async ({ index, step, direction, isForward, isBackward }) => {
+        // Load data before showing this step
+        await fetchDashboardData()
+      },
+      afterStep: ({ index, step, direction, isForward, isBackward }) => {
+        // Track analytics when user leaves this step
+        analytics.track('tour_step_completed', { step: 'dashboard' })
+      }
+    }
+  }
+]
+```
+
+## Event handling
+
+Listen to tour events on the wrapper component:
+
+```vue
+<template>
+  <VOnboardingWrapper
+    :steps="steps"
+    @finish="onFinish"
+    @exit="onExit"
+  />
+</template>
+
+<script setup>
+const onFinish = () => {
+  console.log('Tour completed!')
+  localStorage.setItem('tour_completed', 'true')
+}
+
+const onExit = (currentIndex) => {
+  console.log('Tour exited at step:', currentIndex)
+}
+</script>
+```
+
+<Warning>
+The `exit` event fires when the user clicks the exit button, but the tour continues unless you also call `finish()`.
+</Warning>
+
+## HTML content
+
+Render HTML in step descriptions:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#element' },
+    content: {
+      title: 'Rich Content',
+      description: 'Click <strong>here</strong> to continue.',
+      html: true
+    }
+  }
+]
+```
+
+<Warning>
+Only use `html: true` with trusted content to prevent XSS attacks.
+</Warning>
+
+## Complete example
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper
+      ref="wrapper"
+      :steps="steps"
+      @finish="onFinish"
+    />
+
+    <header>
+      <h1 id="welcome">Welcome to My App</h1>
+      <nav>
+        <button id="dashboard-btn">Dashboard</button>
+        <button id="settings-btn">Settings</button>
+      </nav>
+    </header>
+
+    <button @click="start()">Start Tour</button>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+
+const steps = [
+  {
+    attachTo: { element: '#welcome' },
+    content: {
+      title: 'Welcome!',
+      description: 'Thanks for trying our app. Let us show you around.'
+    }
+  },
+  {
+    attachTo: { element: '#dashboard-btn' },
+    content: {
+      title: 'Dashboard',
+      description: 'View your stats and analytics here.'
+    },
+    options: {
+      popper: { placement: 'bottom' }
+    }
+  },
+  {
+    attachTo: { element: '#settings-btn' },
+    content: {
+      title: 'Settings',
+      description: 'Customize your preferences and account settings.'
+    },
+    options: {
+      popper: { placement: 'bottom' }
+    }
+  }
+]
+
+const onFinish = () => {
+  localStorage.setItem('tour_completed', 'true')
+}
+
+// Auto-start for first-time users
+onMounted(() => {
+  const hasSeenTour = localStorage.getItem('tour_completed')
+  if (!hasSeenTour) {
+    start()
+  }
+})
+</script>
+```

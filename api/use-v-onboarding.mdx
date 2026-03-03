@@ -1,0 +1,164 @@
+---
+title: useVOnboarding
+description: Composable for controlling VOnboardingWrapper instances through template refs
+---
+
+The `useVOnboarding` composable provides a convenient way to control a `VOnboardingWrapper` component instance by wrapping its exposed methods. It accepts a template ref and returns helper methods for controlling the onboarding flow.
+
+## Function signature
+
+```typescript
+function useVOnboarding(wrapperRef: Ref<InstanceType<typeof VOnboardingWrapper>>): {
+  start(): void
+  finish(): void
+  exit(): void
+  goToStep(newStepNumber: number | ((currentStepNumber: number) => number)): void
+}
+```
+
+## Parameters
+
+<ParamField path="wrapperRef" type="Ref<VOnboardingWrapper>" required>
+  A Vue template ref pointing to a `VOnboardingWrapper` component instance. This ref is used to access the component's exposed methods.
+</ParamField>
+
+## Return value
+
+The composable returns an object with the following methods:
+
+<ResponseField name="start" type="() => void">
+  Starts the onboarding flow from the first step (index 0).
+</ResponseField>
+
+<ResponseField name="finish" type="() => void">
+  Completes the onboarding flow, running cleanup for the current step and emitting the `finish` event.
+</ResponseField>
+
+<ResponseField name="exit" type="() => void">
+  Exits the onboarding flow without finishing it, emitting the `exit` event with the current step index.
+</ResponseField>
+
+<ResponseField name="goToStep" type="(newStepNumber: number | ((currentStepNumber: number) => number)) => void">
+  Navigates to a specific step by index or using a function that receives the current step index and returns the target index.
+  
+  **Parameters:**
+  - `newStepNumber`: Either a number representing the target step index, or a function that receives the current step index and returns the target step index
+</ResponseField>
+
+## Usage
+
+### Basic usage
+
+```vue
+<template>
+  <div>
+    <button @click="startOnboarding">Start Tour</button>
+    <button @click="stopOnboarding">Exit Tour</button>
+    
+    <VOnboardingWrapper ref="onboarding" :steps="steps" />
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const onboarding = ref(null)
+const { start, exit } = useVOnboarding(onboarding)
+
+const startOnboarding = () => start()
+const stopOnboarding = () => exit()
+
+const steps = [
+  {
+    attachTo: { element: '#step1' },
+    content: { title: 'Step 1', description: 'Welcome!' }
+  }
+]
+</script>
+```
+
+### Using goToStep with index
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const onboarding = ref(null)
+const { start, goToStep } = useVOnboarding(onboarding)
+
+// Jump to step 3 (0-indexed)
+const jumpToThirdStep = () => goToStep(2)
+</script>
+```
+
+### Using goToStep with function
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const onboarding = ref(null)
+const { goToStep } = useVOnboarding(onboarding)
+
+// Go forward 2 steps
+const skipStep = () => goToStep(current => current + 2)
+
+// Go back 1 step
+const goBack = () => goToStep(current => current - 1)
+</script>
+```
+
+### Controlling multiple onboarding instances
+
+```vue
+<template>
+  <div>
+    <VOnboardingWrapper ref="onboardingA" :steps="stepsA" />
+    <VOnboardingWrapper ref="onboardingB" :steps="stepsB" />
+    
+    <button @click="startA">Start Tour A</button>
+    <button @click="startB">Start Tour B</button>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+
+const onboardingA = ref(null)
+const onboardingB = ref(null)
+
+const { start: startA } = useVOnboarding(onboardingA)
+const { start: startB } = useVOnboarding(onboardingB)
+</script>
+```
+
+## When to use this composable
+
+<Tip>
+Use `useVOnboarding` when you need to control the onboarding flow from your component logic, such as starting the tour on a button click or programmatically navigating between steps.
+</Tip>
+
+<Note>
+You can also call methods directly on the template ref (e.g., `onboarding.value.start()`). The composable provides a cleaner API and better TypeScript support, but both approaches are valid.
+</Note>
+
+## Alternative: Direct ref access
+
+If you prefer not to use the composable, you can access the exposed methods directly:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper } from 'v-onboarding'
+
+const onboarding = ref(null)
+
+// Call methods directly on the ref
+const startOnboarding = () => onboarding.value?.start()
+const exitOnboarding = () => onboarding.value?.exit()
+</script>
+```

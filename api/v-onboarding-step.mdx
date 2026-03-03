@@ -1,0 +1,479 @@
+---
+title: VOnboardingStep
+description: The default step component that renders the onboarding UI with overlay and positioning.
+---
+
+`VOnboardingStep` is the default component used to render individual onboarding steps. It handles SVG overlay rendering, Popper.js positioning, focus trapping, and provides a default UI that you can customize or replace entirely.
+
+## Overview
+
+This component is automatically used by `VOnboardingWrapper` when you don't provide a custom slot. It:
+
+- Creates an SVG overlay that darkens the page except for the target element
+- Positions the step UI relative to the target element using Popper.js
+- Implements focus trapping for accessibility
+- Handles smooth scrolling to the target element
+- Provides a default UI with title, description, and navigation buttons
+
+<Note>
+  `VOnboardingStep` is injected automatically by `VOnboardingWrapper`. You typically don't need to import or use it directly unless you're creating custom step layouts.
+</Note>
+
+## Default UI structure
+
+The default slot renders the following structure:
+
+```html
+<div class="v-onboarding-item">
+  <!-- Header with title and close button -->
+  <div class="v-onboarding-item__header">
+    <span class="v-onboarding-item__header-title">{{ step.content.title }}</span>
+    <button class="v-onboarding-item__header-close" aria-label="Close">
+      <!-- Close icon SVG -->
+    </button>
+  </div>
+  
+  <!-- Description -->
+  <p class="v-onboarding-item__description">
+    {{ step.content.description }}
+  </p>
+  
+  <!-- Action buttons -->
+  <div class="v-onboarding-item__actions">
+    <button class="v-onboarding-btn-secondary">Previous</button>
+    <button class="v-onboarding-btn-primary">Next</button>
+  </div>
+</div>
+```
+
+## CSS custom properties
+
+The component's appearance can be customized using CSS variables:
+
+```css
+:root {
+  /* Overlay styling */
+  --v-onboarding-overlay-fill: black;
+  --v-onboarding-overlay-opacity: 0.5;
+  --v-onboarding-overlay-z: 10;
+  
+  /* Step UI z-index */
+  --v-onboarding-step-z: 20;
+}
+```
+
+## HTML content support
+
+The component supports rendering HTML in the description field:
+
+```javascript
+const steps = [
+  {
+    content: {
+      title: 'Rich Content',
+      description: 'This step has <strong>bold</strong> and <em>italic</em> text!',
+      html: true  // Enable HTML rendering
+    },
+    attachTo: { element: '#target' }
+  }
+]
+```
+
+<Warning>
+  When `html: true`, the description is rendered using `v-html`. Only use this with trusted content to avoid XSS vulnerabilities.
+</Warning>
+
+## Custom step slot
+
+You can provide your own UI while still using `VOnboardingStep` for positioning and overlay:
+
+```vue
+<VOnboardingWrapper :steps="steps">
+  <template #default="{ step, next, previous, exit, isFirst, isLast }">
+    <VOnboardingStep>
+      <!-- Custom content inside VOnboardingStep -->
+      <div class="my-custom-step">
+        <img :src="step.content.image" />
+        <h2>{{ step.content.title }}</h2>
+        <p>{{ step.content.description }}</p>
+        
+        <button @click="previous" :disabled="isFirst">←</button>
+        <button @click="next">{{ isLast ? '✓' : '→' }}</button>
+        <button @click="exit">×</button>
+      </div>
+    </VOnboardingStep>
+  </template>
+</VOnboardingWrapper>
+```
+
+## Popper.js integration
+
+The component uses Popper.js for intelligent positioning. You can customize the placement and behavior:
+
+```javascript
+const steps = [
+  {
+    content: { title: 'Step 1' },
+    attachTo: { element: '#target' },
+    options: {
+      popper: {
+        placement: 'right',  // top, bottom, left, right, auto
+        modifiers: [
+          {
+            name: 'offset',
+            options: {
+              offset: [0, 16]  // [skidding, distance]
+            }
+          },
+          {
+            name: 'arrow',
+            options: {
+              padding: 8
+            }
+          }
+        ]
+      }
+    }
+  }
+]
+```
+
+### Available placements
+
+- `top`, `top-start`, `top-end`
+- `right`, `right-start`, `right-end`
+- `bottom`, `bottom-start`, `bottom-end`
+- `left`, `left-start`, `left-end`
+- `auto` (automatically chooses the best placement)
+
+<Note>
+  The component includes automatic flip behavior, so if there isn't enough space for the preferred placement, it will automatically try alternative positions.
+</Note>
+
+## Scroll behavior
+
+The component automatically scrolls the target element into view with configurable behavior:
+
+```javascript
+const options = {
+  scrollToStep: {
+    enabled: true,
+    options: {
+      behavior: 'smooth',  // 'auto' or 'smooth'
+      block: 'center',     // 'start', 'center', 'end', 'nearest'
+      inline: 'center'     // 'start', 'center', 'end', 'nearest'
+    }
+  }
+}
+```
+
+The component includes smart scroll detection:
+- Waits for smooth scrolling to complete before showing the step
+- Updates positioning after scroll completes
+- Has a 1-second timeout to prevent infinite waiting
+
+## Focus trap
+
+When `overlay.preventOverlayInteraction` is enabled (default), the component:
+
+1. Traps keyboard focus within the step UI
+2. Prevents interaction with elements outside the highlighted area
+3. Restores normal behavior when the step changes or completes
+
+This ensures users interact with the onboarding flow sequentially and improves accessibility.
+
+## Overlay configuration
+
+The SVG overlay can be customized per step or globally:
+
+```javascript
+const steps = [
+  {
+    content: { title: 'Custom Overlay' },
+    attachTo: { element: '#target' },
+    options: {
+      overlay: {
+        enabled: true,
+        padding: 16,
+        borderRadius: 8,
+        preventOverlayInteraction: true
+      }
+    }
+  },
+  {
+    content: { title: 'No Overlay' },
+    attachTo: { element: '#another' },
+    options: {
+      overlay: {
+        enabled: false  // Disable overlay for this step
+      }
+    }
+  }
+]
+```
+
+### Advanced padding
+
+```javascript
+options: {
+  overlay: {
+    padding: {
+      top: 24,
+      right: 16,
+      bottom: 24,
+      left: 16
+    }
+  }
+}
+```
+
+### Advanced border radius
+
+```javascript
+options: {
+  overlay: {
+    borderRadius: {
+      leftTop: 8,
+      rightTop: 16,
+      rightBottom: 8,
+      leftBottom: 16
+    }
+  }
+}
+```
+
+## Button visibility
+
+Control which buttons appear in the default UI:
+
+```javascript
+const steps = [
+  {
+    content: { title: 'First Step' },
+    attachTo: { element: '#intro' },
+    options: {
+      hideButtons: {
+        previous: true,  // Hide on first step
+        exit: false,
+        next: false
+      }
+    }
+  },
+  {
+    content: { title: 'Auto-advance' },
+    attachTo: { element: '#demo' },
+    options: {
+      hideButtons: {
+        previous: false,
+        next: true,      // Force use of custom trigger
+        exit: true
+      }
+    }
+  }
+]
+```
+
+## Styling the default UI
+
+The default UI uses semantic class names that you can target with CSS:
+
+```css
+/* Step container */
+.v-onboarding-item {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  max-width: 400px;
+}
+
+/* Header */
+.v-onboarding-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.v-onboarding-item__header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.v-onboarding-item__header-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #718096;
+}
+
+.v-onboarding-item__header-close:hover {
+  color: #1a202c;
+}
+
+/* Description */
+.v-onboarding-item__description {
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Actions */
+.v-onboarding-item__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Buttons */
+.v-onboarding-btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.v-onboarding-btn-primary:hover {
+  background: #2563eb;
+}
+
+.v-onboarding-btn-secondary {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.v-onboarding-btn-secondary:hover {
+  background: #f3f4f6;
+}
+
+/* Popper arrow */
+[data-popper-arrow] {
+  /* Custom arrow styling */
+}
+```
+
+## Complete custom example
+
+Here's a complete example combining custom styling with the default component:
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { VOnboardingWrapper, VOnboardingStep } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const steps = [
+  {
+    attachTo: { element: '#feature-1' },
+    content: {
+      title: '🎉 Welcome!',
+      description: 'Let\'s explore the key features.',
+      image: '/intro.svg'
+    }
+  },
+  {
+    attachTo: { element: '#feature-2' },
+    content: {
+      title: 'Powerful Tools',
+      description: 'Access <strong>advanced features</strong> here.',
+      html: true
+    },
+    options: {
+      popper: {
+        placement: 'right-start'
+      },
+      overlay: {
+        padding: 12,
+        borderRadius: 8
+      }
+    }
+  }
+]
+</script>
+
+<template>
+  <VOnboardingWrapper :steps="steps">
+    <template #default="{ step, next, previous, exit, isFirst, isLast }">
+      <VOnboardingStep>
+        <div class="custom-step">
+          <img v-if="step.content.image" :src="step.content.image" />
+          
+          <h3>{{ step.content.title }}</h3>
+          
+          <p v-if="step.content.html" v-html="step.content.description" />
+          <p v-else>{{ step.content.description }}</p>
+          
+          <div class="actions">
+            <button v-if="!isFirst" @click="previous">← Back</button>
+            <button @click="exit" class="skip">Skip Tour</button>
+            <button @click="next" class="primary">
+              {{ isLast ? 'Finish' : 'Next →' }}
+            </button>
+          </div>
+        </div>
+      </VOnboardingStep>
+    </template>
+  </VOnboardingWrapper>
+</template>
+
+<style scoped>
+.custom-step {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 420px;
+}
+
+.custom-step img {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.custom-step h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+}
+
+.custom-step p {
+  margin: 0 0 24px 0;
+  opacity: 0.95;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.actions button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.actions button.primary {
+  background: white;
+  color: #667eea;
+}
+
+.actions button.skip {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+</style>
+```

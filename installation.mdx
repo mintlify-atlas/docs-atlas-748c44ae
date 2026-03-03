@@ -1,0 +1,220 @@
+---
+title: Installation
+description: Install v-onboarding in your Vue 3 or Nuxt 3 project using npm, yarn, or pnpm.
+---
+
+# Installation
+
+v-onboarding can be installed in both Vue 3 and Nuxt 3 applications. Choose the installation method that matches your project setup.
+
+## Package installation
+
+Install v-onboarding using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install v-onboarding
+```
+
+```bash yarn
+yarn add v-onboarding
+```
+
+```bash pnpm
+pnpm add v-onboarding
+```
+</CodeGroup>
+
+## Vue 3 setup
+
+For standard Vue 3 applications, import the components and styles in your application.
+
+### Import components
+
+You can import components globally or locally depending on your needs.
+
+<Tabs>
+  <Tab title="Local import (recommended)">
+    Import components in the files where you need them:
+
+    ```vue
+    <script setup lang="ts">
+    import { VOnboardingWrapper, VOnboardingStep } from 'v-onboarding'
+    import 'v-onboarding/dist/style.css'
+    </script>
+    ```
+  </Tab>
+
+  <Tab title="Global registration">
+    Register components globally in your `main.ts`:
+
+    ```ts
+    import { createApp } from 'vue'
+    import App from './App.vue'
+    import { VOnboardingWrapper, VOnboardingStep } from 'v-onboarding'
+    import 'v-onboarding/dist/style.css'
+
+    const app = createApp(App)
+    app.component('VOnboardingWrapper', VOnboardingWrapper)
+    app.component('VOnboardingStep', VOnboardingStep)
+    app.mount('#app')
+    ```
+  </Tab>
+</Tabs>
+
+### Import styles
+
+The CSS file must be imported for the default UI to work properly:
+
+```ts
+import 'v-onboarding/dist/style.css'
+```
+
+<Note>
+If you're building a custom UI with your own styles, you still need to import the base CSS file as it includes essential positioning and overlay styles.
+</Note>
+
+### Using the composable
+
+The `useVOnboarding` composable is also available for programmatic control:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper, useVOnboarding } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const { start, finish, goToStep } = useVOnboarding(wrapper)
+</script>
+```
+
+## Nuxt 3 setup
+
+For Nuxt 3 applications, v-onboarding provides a dedicated module with automatic imports.
+
+### Add the module
+
+Add `v-onboarding/nuxt` to the `modules` section of your `nuxt.config.ts`:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt']
+})
+```
+
+<Info>
+With the Nuxt module, all components, composables, and styles are automatically imported - no manual imports needed!
+</Info>
+
+### Module configuration
+
+You can customize which features are auto-imported:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['v-onboarding/nuxt'],
+  vOnboarding: {
+    // Auto-import components (default: true)
+    components: true,
+    // Auto-import composables (default: true)
+    composables: true,
+    // Auto-import CSS (default: true)
+    css: true
+  }
+})
+```
+
+### What's auto-imported
+
+When using the Nuxt module, the following are available without explicit imports:
+
+- **Components**: `VOnboardingWrapper`, `VOnboardingStep`
+- **Composables**: `useVOnboarding`
+- **Styles**: `v-onboarding/dist/style.css`
+
+```vue
+<script setup lang="ts">
+// No imports needed - everything is auto-imported!
+const wrapper = ref(null)
+const { start } = useVOnboarding(wrapper)
+</script>
+
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps" />
+</template>
+```
+
+<Note>
+All components are registered as client-only components to prevent SSR issues.
+</Note>
+
+## TypeScript support
+
+v-onboarding is written in TypeScript and includes complete type definitions. No additional setup is required.
+
+### Type imports
+
+Import types for your step definitions and options:
+
+```ts
+import type { 
+  StepEntity, 
+  VOnboardingWrapperOptions,
+  AttachableElement,
+  onBeforeStepOptions,
+  onAfterStepOptions
+} from 'v-onboarding'
+
+const steps: StepEntity[] = [
+  {
+    attachTo: { element: '#my-element' },
+    content: {
+      title: 'Welcome',
+      description: 'This is the first step'
+    }
+  }
+]
+```
+
+### Available types
+
+The following types are exported from the main package:
+
+- `StepEntity` - Type definition for individual step objects
+- `VOnboardingWrapperOptions` - Configuration options for the wrapper component
+- `AttachableElement` - Type for element selectors (string, ref, or function)
+- `onBeforeStepOptions` - Options passed to `beforeStep` hooks
+- `onAfterStepOptions` - Options passed to `afterStep` hooks
+- `SvgOverlayOptions` - Configuration for the SVG overlay
+
+## Verify installation
+
+To verify that v-onboarding is installed correctly, create a simple test:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const steps = [{
+  attachTo: { element: '#test' },
+  content: { title: 'It works!', description: 'v-onboarding is installed correctly.' }
+}]
+</script>
+
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps" />
+  <button id="test" @click="wrapper?.start()">Test Installation</button>
+</template>
+```
+
+<Tip>
+If you see a styled tooltip when clicking the button, v-onboarding is working correctly!
+</Tip>
+
+## Next steps
+
+Now that you have v-onboarding installed, continue to the [quickstart guide](/quickstart) to build your first onboarding tour.

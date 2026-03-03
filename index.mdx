@@ -1,97 +1,120 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: A fully-typed, customizable onboarding component for Vue 3 that helps you create interactive product tours with smart positioning and accessible UI.
 ---
 
-## Setting up
+# Introduction to v-onboarding
 
-Get your documentation site up and running in minutes.
+v-onboarding is a powerful Vue 3 library for creating interactive product tours and onboarding experiences. Built with TypeScript, it provides a fully-typed API with smart tooltip positioning, SVG overlays, and extensive customization options.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## What is v-onboarding?
 
-## Make it yours
+v-onboarding allows you to guide users through your application with step-by-step tours that highlight specific elements and display contextual information. Whether you're onboarding new users, showcasing features, or providing in-app tutorials, v-onboarding makes it simple and accessible.
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started by installing v-onboarding in your Vue 3 or Nuxt 3 project
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Build your first onboarding tour in minutes
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="API Reference" icon="code" href="/api/v-onboarding-wrapper">
+    Explore the complete API documentation
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Examples" icon="sparkles" href="/examples/basic-tour">
+    See real-world examples and use cases
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key features
 
-Everything you need to create world-class documentation.
+v-onboarding is designed to provide a complete onboarding solution with minimal setup:
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="TypeScript First" icon="shield-check">
+    Full type support out of the box with detailed interfaces for all props, events, and hooks
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Customizable UI" icon="palette">
+    Use the default styled components or create your own with flexible slot-based customization
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Accessible" icon="universal-access">
+    Built-in focus trap for keyboard navigation and ARIA-compliant markup
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Smart Positioning" icon="compass">
+    Automatic tooltip placement with Popper.js that adapts to viewport boundaries
   </Card>
-</Columns>
+  <Card title="SVG Overlay" icon="layer-group">
+    Highlight elements with a customizable SVG overlay and configurable padding
+  </Card>
+  <Card title="Lifecycle Hooks" icon="webhook">
+    Use `onBeforeStep` and `onAfterStep` hooks for custom logic at each step
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Use cases
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+v-onboarding is perfect for:
+
+- **User onboarding**: Guide new users through your application's key features
+- **Feature announcements**: Showcase new functionality to existing users
+- **Interactive tutorials**: Create step-by-step walkthroughs for complex workflows
+- **Contextual help**: Provide in-app guidance for specific tasks or features
+- **Product tours**: Highlight your application's capabilities in a structured way
+
+## Simple example
+
+Here's a minimal example showing how easy it is to create an onboarding tour:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { VOnboardingWrapper } from 'v-onboarding'
+import 'v-onboarding/dist/style.css'
+
+const wrapper = ref(null)
+const steps = [
+  {
+    attachTo: { element: '#feature-1' },
+    content: { title: 'Welcome!', description: 'Let me show you around.' }
+  },
+  {
+    attachTo: { element: '#feature-2' },
+    content: { title: 'Next Feature', description: 'Here is another feature.' }
+  }
+]
+</script>
+
+<template>
+  <VOnboardingWrapper ref="wrapper" :steps="steps" />
+  <button @click="wrapper?.start()">Start Tour</button>
+  
+  <div id="feature-1">Feature 1</div>
+  <div id="feature-2">Feature 2</div>
+</template>
+```
+
+<Note>
+The library automatically handles tooltip positioning, overlay rendering, and keyboard navigation - you just define the steps!
+</Note>
+
+## Framework support
+
+v-onboarding is built specifically for:
+
+- **Vue 3**: Full support for Vue 3.2.21 and above with Composition API
+- **Nuxt 3**: Dedicated module with auto-imports for components and composables
+- **TypeScript**: First-class TypeScript support with comprehensive type definitions
+
+## Next steps
+
+<Steps>
+  <Step title="Install the library">
+    Follow the [installation guide](/installation) to add v-onboarding to your project
+  </Step>
+  <Step title="Create your first tour">
+    Build a working example with the [quickstart guide](/quickstart)
+  </Step>
+  <Step title="Customize the experience">
+    Explore the [API reference](/api/v-onboarding-wrapper) to customize your tours
+  </Step>
+</Steps>

@@ -1,0 +1,431 @@
+---
+title: Options
+description: Configuration options for VOnboardingWrapper and individual steps
+---
+
+The `VOnboardingWrapperOptions` interface controls the behavior and appearance of your onboarding tour. Options can be set globally on the `VOnboardingWrapper` component or overridden per-step.
+
+## Interface definition
+
+```typescript
+interface VOnboardingWrapperOptions {
+  popper?: Parameters<typeof createPopper>[2];
+  overlay?: SvgOverlayOptions;
+  scrollToStep?: {
+    enabled?: boolean;
+    options?: ScrollIntoViewOptions;
+  };
+  autoFinishByExit?: boolean;
+  hideButtons?: {
+    previous?: boolean;
+    next?: boolean;
+    exit?: boolean;
+  };
+  labels?: {
+    previousButton?: string;
+    nextButton?: string;
+    finishButton?: string;
+  };
+  hideNextStepDuringHook?: boolean;
+}
+```
+
+## Properties
+
+<ParamField path="popper" type="PopperOptions">
+  Configuration for [Popper.js](https://popper.js.org/), which handles tooltip positioning.
+  
+  <Expandable title="Default popper configuration">
+    ```typescript
+    {
+      modifiers: [
+        {
+          name: 'arrow',
+          options: {
+            padding: 8,
+          },
+        },
+        {
+          name: 'flip',
+          options: {
+            fallbackPlacements: ['top', 'bottom', 'right', 'left'],
+          },
+        },
+        {
+          name: 'preventOverflow',
+          options: {
+            boundary: 'viewport',
+            padding: 8,
+            tether: false,
+            altAxis: true,
+          },
+        },
+      ],
+    }
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField path="overlay" type="SvgOverlayOptions">
+  Controls the SVG overlay that highlights the active step element.
+  
+  <Expandable title="overlay properties">
+    <ParamField path="overlay.enabled" type="boolean" default={true}>
+      Whether to show the overlay that darkens the rest of the page.
+    </ParamField>
+    
+    <ParamField path="overlay.padding" type="number | object" default={0}>
+      Space around the highlighted element. Can be a single number or an object:
+      
+      ```typescript
+      // Single value for all sides
+      padding: 8
+      
+      // Individual sides
+      padding: {
+        top: 8,
+        right: 12,
+        bottom: 8,
+        left: 12
+      }
+      ```
+    </ParamField>
+    
+    <ParamField path="overlay.borderRadius" type="number | object" default={0}>
+      Border radius for the highlighted area. Can be a single number or an object:
+      
+      ```typescript
+      // Single value for all corners
+      borderRadius: 8
+      
+      // Individual corners
+      borderRadius: {
+        leftTop: 8,
+        rightTop: 8,
+        rightBottom: 8,
+        leftBottom: 8
+      }
+      ```
+    </ParamField>
+    
+    <ParamField path="overlay.preventOverlayInteraction" type="boolean" default={true}>
+      When `true`, prevents interaction with elements outside the highlighted area. The page body becomes non-interactive, and only the highlighted element and step tooltip are clickable.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="scrollToStep" type="object">
+  Controls automatic scrolling to make step elements visible.
+  
+  <Expandable title="scrollToStep properties">
+    <ParamField path="scrollToStep.enabled" type="boolean" default={true}>
+      Whether to automatically scroll to the step element when it becomes active.
+    </ParamField>
+    
+    <ParamField path="scrollToStep.options" type="ScrollIntoViewOptions">
+      Options passed to the native `scrollIntoView()` method.
+      
+      Default:
+      ```typescript
+      {
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      }
+      ```
+      
+      See [MDN ScrollIntoViewOptions](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView) for all available options.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="autoFinishByExit" type="boolean" default={true}>
+  When `true`, clicking the exit button will automatically call `finish()` to end the tour. When `false`, clicking exit only emits the `exit` event, allowing you to handle it manually.
+</ParamField>
+
+<ParamField path="hideButtons" type="object">
+  Controls which navigation buttons are visible in the step tooltip.
+  
+  <Expandable title="hideButtons properties">
+    <ParamField path="hideButtons.previous" type="boolean" default={false}>
+      Hide the "Previous" button. Note: The previous button is automatically hidden on the first step.
+    </ParamField>
+    
+    <ParamField path="hideButtons.next" type="boolean" default={false}>
+      Hide the "Next" / "Finish" button.
+    </ParamField>
+    
+    <ParamField path="hideButtons.exit" type="boolean" default={false}>
+      Hide the exit (close) button in the header.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="labels" type="object">
+  Customize the text displayed on navigation buttons.
+  
+  <Expandable title="labels properties">
+    <ParamField path="labels.previousButton" type="string" default="Previous">
+      Text for the previous button.
+    </ParamField>
+    
+    <ParamField path="labels.nextButton" type="string" default="Next">
+      Text for the next button (shown on all steps except the last).
+    </ParamField>
+    
+    <ParamField path="labels.finishButton" type="string" default="Finish">
+      Text for the finish button (shown on the last step).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="hideNextStepDuringHook" type="boolean" default={false}>
+  When `true`, hides the next step's tooltip while its `beforeStep` hook is executing. Useful for steps with async setup that might take time.
+</ParamField>
+
+## Examples
+
+### Global configuration
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { VOnboardingWrapper } from 'v-onboarding';
+import 'v-onboarding/dist/style.css';
+
+const wrapper = ref(null);
+
+const steps = [
+  // ... your steps
+];
+
+const options = {
+  overlay: {
+    enabled: true,
+    padding: 8,
+    borderRadius: 8
+  },
+  labels: {
+    previousButton: 'Back',
+    nextButton: 'Continue',
+    finishButton: 'Done'
+  }
+};
+</script>
+
+<template>
+  <VOnboardingWrapper 
+    ref="wrapper" 
+    :steps="steps" 
+    :options="options" 
+  />
+</template>
+```
+
+### Disable overlay
+
+```typescript
+const options = {
+  overlay: {
+    enabled: false
+  }
+};
+```
+
+### Custom overlay styling
+
+```typescript
+const options = {
+  overlay: {
+    enabled: true,
+    padding: {
+      top: 16,
+      right: 16,
+      bottom: 16,
+      left: 16
+    },
+    borderRadius: {
+      leftTop: 12,
+      rightTop: 12,
+      rightBottom: 12,
+      leftBottom: 12
+    },
+    preventOverlayInteraction: true
+  }
+};
+```
+
+### Instant scrolling
+
+```typescript
+const options = {
+  scrollToStep: {
+    enabled: true,
+    options: {
+      behavior: 'instant',  // No smooth animation
+      block: 'nearest'
+    }
+  }
+};
+```
+
+### Hide navigation buttons
+
+```typescript
+const options = {
+  hideButtons: {
+    previous: true,  // Auto-play mode
+    exit: true       // Force completion
+  }
+};
+```
+
+### Internationalization
+
+```typescript
+const options = {
+  labels: {
+    previousButton: 'Précédent',
+    nextButton: 'Suivant',
+    finishButton: 'Terminer'
+  }
+};
+```
+
+### Custom Popper positioning
+
+```typescript
+const options = {
+  popper: {
+    placement: 'bottom',  // Prefer bottom placement
+    modifiers: [
+      {
+        name: 'offset',
+        options: {
+          offset: [0, 16],  // 16px offset from element
+        },
+      },
+    ],
+  }
+};
+```
+
+### Per-step override
+
+Step-level options merge with and override global options:
+
+```typescript
+const steps = [
+  {
+    attachTo: { element: '#step1' },
+    content: { title: 'Step 1' },
+    // This step uses global options
+  },
+  {
+    attachTo: { element: '#step2' },
+    content: { title: 'Step 2' },
+    options: {
+      overlay: {
+        padding: 16,      // Override just padding
+        borderRadius: 12  // And border radius
+      }
+    }
+  }
+];
+```
+
+### Async step transitions
+
+```typescript
+const options = {
+  hideNextStepDuringHook: true  // Hide tooltip during async setup
+};
+
+const steps = [
+  {
+    attachTo: { element: '#modal' },
+    content: { title: 'Modal' },
+    on: {
+      beforeStep: async () => {
+        // Tooltip is hidden during this async operation
+        await openModal();
+        await waitForAnimation();
+      }
+    }
+  }
+];
+```
+
+### Manual exit handling
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { VOnboardingWrapper } from 'v-onboarding';
+
+const wrapper = ref(null);
+
+const options = {
+  autoFinishByExit: false  // Don't auto-finish
+};
+
+function handleExit(stepIndex) {
+  console.log(`User exited at step ${stepIndex}`);
+  // Custom logic here
+  wrapper.value.finish();
+}
+</script>
+
+<template>
+  <VOnboardingWrapper 
+    ref="wrapper" 
+    :steps="steps" 
+    :options="options"
+    @exit="handleExit"
+  />
+</template>
+```
+
+## Default values
+
+All default values are defined in `src/options/VOnboardingWrapper.ts`:
+
+```typescript
+{
+  popper: {
+    modifiers: [
+      { name: 'arrow', options: { padding: 8 } },
+      { name: 'flip', options: { fallbackPlacements: ['top', 'bottom', 'right', 'left'] } },
+      { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8, tether: false, altAxis: true } }
+    ]
+  },
+  overlay: {
+    enabled: true,
+    padding: 0,
+    borderRadius: 0,
+    preventOverlayInteraction: true
+  },
+  scrollToStep: {
+    enabled: true,
+    options: { behavior: 'smooth', block: 'center', inline: 'center' }
+  },
+  autoFinishByExit: true,
+  labels: {
+    previousButton: 'Previous',
+    nextButton: 'Next',
+    finishButton: 'Finish'
+  },
+  hideButtons: {
+    previous: false,
+    next: false,
+    exit: false
+  },
+  hideNextStepDuringHook: false
+}
+```
+
+## Related
+
+- [Step Entity](/api/step-entity) - Configure individual steps
+- [Hooks](/api/hooks) - Step lifecycle hooks
+- [CSS Variables](/api/css-variables) - Style customization
