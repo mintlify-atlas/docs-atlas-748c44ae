@@ -1,0 +1,93 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "v-onboarding",
+  "projectDescription": "A fully-typed, customizable onboarding component for Vue 3",
+  "theme": "palm",
+  "primaryColor": "#42b883",
+  "lightColor": "#42d392",
+  "darkColor": "#35495e",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/basic-usage",
+              "guides/custom-ui",
+              "guides/customization",
+              "guides/nuxt"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/basic-tour",
+              "examples/template-refs",
+              "examples/lifecycle-hooks",
+              "examples/custom-styling"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Components",
+            "pages": [
+              "api/v-onboarding-wrapper",
+              "api/v-onboarding-step"
+            ]
+          },
+          {
+            "group": "Composables",
+            "pages": [
+              "api/use-v-onboarding"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "api/step-entity",
+              "api/options",
+              "api/hooks",
+              "api/css-variables"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "TypeScript First - Full type support out of the box",
+    "Customizable UI - Use default styling or bring your own with slots",
+    "Accessible - Built-in focus trap for keyboard navigation",
+    "Flexible Positioning - Smart tooltip placement with Popper.js",
+    "SVG Overlay - Highlight elements with customizable overlay",
+    "Lifecycle Hooks - onBeforeStep and onAfterStep for custom logic",
+    "Nuxt 3 Module - First-class support with auto-imports",
+    "Vue 3 Composition API - Modern reactive architecture"
+  ],
+  "publicApiSurface": [
+    "VOnboardingWrapper - Main component for creating onboarding tours",
+    "VOnboardingStep - Component for rendering individual tour steps",
+    "useVOnboarding - Composable for programmatic tour control (start, finish, goToStep, exit)",
+    "StepEntity - TypeScript interface defining step configuration",
+    "VOnboardingWrapperOptions - Global configuration options",
+    "SvgOverlayOptions - Overlay customization options",
+    "AttachableElement - Type for element attachment (string selector, ref, or function)",
+    "onBeforeStepOptions - Hook options passed to beforeStep callback",
+    "onAfterStepOptions - Hook options passed to afterStep callback",
+    "Nuxt Module - v-onboarding/nuxt with auto-import configuration"
+  ]
+}
